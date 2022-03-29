@@ -130,6 +130,36 @@ def bishop_movegen(board, position, colour):
     return moves
 
 
+def rook_movegen(board, position, colour):
+    moves = []
+    vectors = [[0, -1], [0, 1], [1, 0], [-1, 0]]
+
+    for vector in vectors:
+        valid_move = True
+        new_position = position
+        new_vector = vector
+        while valid_move:
+            for position_to_check in vector_to_position(new_position, new_vector):
+                if position_to_check:
+                    if position_to_check.segment != position.segment:
+                        new_vector = [-vector[0], -vector[1]]
+                    square_occupant = board.position[int(position_to_check.segment)][int(position_to_check.square.y)][
+                        int(position_to_check.square.x)]
+                    if square_occupant is None:
+                        moves.append(position_to_check)
+                        new_position = position_to_check
+                    else:
+                        if square_occupant[0] != colour:
+                            moves.append(position_to_check)
+                            valid_move = False
+                        else:
+                            valid_move = False
+                else:
+                    valid_move = False
+
+    return moves
+
+
 def piece_movegen(board, position, colour):
     piece_id = board.position[int(position.segment)][int(position.square.y)][int(position.square.x)][1]
     if piece_id == 'p':
@@ -138,5 +168,7 @@ def piece_movegen(board, position, colour):
         return knight_movegen(board, position, colour)
     elif piece_id == 'b':
         return bishop_movegen(board, position, colour)
+    elif piece_id == 'r':
+        return rook_movegen(board, position, colour)
     else:
         return []

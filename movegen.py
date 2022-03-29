@@ -1,6 +1,12 @@
 """TODO: Make vector_to_position code not garbage"""
 from position import *
 
+colour_to_segment = {
+    "w": 0,
+    "b": 1,
+    "r": 2
+}
+
 
 def direction_to_square(position, vector):
     new_square = position.square + Vector2(vector)
@@ -28,7 +34,7 @@ def direction_to_square(position, vector):
 
 def vector_to_position(position, vector):
     xy_first_position = direction_to_square(position, [vector[0], 0])
-    xy_final_position = None
+    xy_final_position: None | Position = None
     if xy_first_position:
         xy_final_position = direction_to_square(xy_first_position, [0, vector[1]])
 
@@ -51,11 +57,15 @@ def vector_to_position(position, vector):
 def pawn_movegen(board, position, colour):
     moves = []
 
-    if position.square.y == 2:
+    capture_vectors = [[-1, -1], [1, -1]]
+    if position.square.y == 2 and position.segment == colour_to_segment[colour]:
         vectors = [[0, -1], [0, -2]]
     else:
-        vectors = [[0, -1]]
-    capture_vectors = [[-1, -1], [1, -1]]
+        if colour_to_segment[colour] == position.segment:
+            vectors = [[0, -1]]
+        else:
+            vectors = [[0, 1]]
+            capture_vectors = [[-1, 1], [1, 1]]
 
     for vector in vectors:
         for position_to_check in vector_to_position(position, vector):
@@ -91,28 +101,33 @@ def knight_movegen(board, position, colour):
     return moves
 
 
-# def bishop_movegen(board, square, colour, segment):
-#     moves = []
-#     vectors = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
-#
-#     for vector in vectors:
-#         new_square = square
-#         new_segment = segment
-#         while True:
-#             for position in vector_to_position(new_square, new_segment, vector):
-#                 if position:
-#                     new_segment, square_to_check = position
-#                     square_occupant = board.position[new_segment][square_to_check[1]][square_to_check[0]]
-#                     if square_occupant is None:
-#                         moves.append([new_segment, square_to_check])
-#                     else:
-#                         if square_occupant[0] != colour:
-#                             moves.append([new_segment, square_to_check])
-#                             break
-#                         else:
-#                             break
-#                 else:
-#                     break
+def bishop_movegen(board, position, colour):
+    moves = []
+    vectors = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
+
+    for vector in vectors:
+        current_positions = [position]  # Array of positions to handle branches in diagonals
+
+        for current_position in current_positions:  # Handling branches if there are any
+            valid_move = True
+            while valid_move:
+                next_positions = []
+                new_positions = vector_to_position(current_position, vector)
+                for position_to_check in vector_to_position(current_position, vector):  # Check possible positions from each current position
+                    if position_to_check is not None:
+                        square_occupant = board.position[int(position_to_check.segment)][int(position_to_check.square.y)][int(position_to_check.square.x)]
+                        if square_occupant is None:
+                            moves.append(position_to_check)
+                            next_positions.append(position_to_check)
+                        else:
+                            if square_occupant[0] != colour:
+                                moves.append(position_to_check)
+                print(next_positions)
+                if not next_positions:
+                    valid_move = False
+                current_positions = next_positions
+
+    return moves
 
 
 def piece_movegen(board, position, colour):
@@ -121,5 +136,7 @@ def piece_movegen(board, position, colour):
         return pawn_movegen(board, position, colour)
     elif piece_id == 'n':
         return knight_movegen(board, position, colour)
+    elif piece_id == 'b':
+        return bishop_movegen(board, position, colour)
     else:
         return []

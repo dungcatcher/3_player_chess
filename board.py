@@ -5,7 +5,7 @@ class Board:
         """
         self.position = [
             [  # White segment
-                [None, None, None, "wr", None, None, None, None],
+                [None, None, None, "wb", None, None, None, None],
                 [None, None, None, None, None, None, None, None],
                 ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
                 ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"]

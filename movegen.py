@@ -106,28 +106,25 @@ def bishop_movegen(board, position, colour):
     vectors = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 
     for vector in vectors:
-        current_positions = [position]  # Array of positions to handle branches in diagonals
-
-        for current_position in current_positions:  # Handling branches if there are any
-            valid_move = True
-            while valid_move:
-                next_positions = []
-                new_positions = vector_to_position(current_position, vector)
-                for position_to_check in vector_to_position(current_position, vector):  # Check possible positions from each current position
-                    if position_to_check is not None:
-                        square_occupant = board.position[int(position_to_check.segment)][int(position_to_check.square.y)][int(position_to_check.square.x)]
-                        if square_occupant is None:
-                            moves.append(position_to_check)
-                            next_positions.append(position_to_check)
-                        else:
-                            if square_occupant[0] != colour:
-                                moves.append(position_to_check)
-                print(next_positions)
-                if not next_positions:
-                    valid_move = False
-                current_positions = next_positions
-
+        moves.append(iterateMove(board, position, vector, colour)[:])
     return moves
+
+def iterateMove(board, position, vector, colour):
+    print(position.segment, position.square.y,position.square.x)
+    validMoves = []
+    print('original', position.segment, position.square.y, position.square.x)
+    newMove = vector_to_position(position, vector)
+    if newMove is not None:
+        for move in newMove:
+            print('new', move.segment, move.square.y, move.square.x)
+            if move is not None:
+                square_occupant = board.position[int(move.segment)][int(move.square.y)][int(move.square.x)]
+                if square_occupant is None:
+                    validMoves.append(move)
+                    validMoves.append(iterateMove(board, move, vector, colour)[:])
+                elif square_occupant[0] != colour:
+                    validMoves.append(move)
+    return validMoves
 
 
 def rook_movegen(board, position, colour):

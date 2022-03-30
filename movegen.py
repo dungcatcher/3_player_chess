@@ -2,13 +2,6 @@
 from position import *
 
 
-colour_to_segment = {
-    "w": 0,
-    "b": 1,
-    "r": 2
-}
-
-
 def direction_to_square(position, vector):
     new_square = position.square + Vector2(vector)
     new_segment = position.segment
@@ -22,12 +15,12 @@ def direction_to_square(position, vector):
             if 0 <= new_square.x <= 3:
                 new_segment = (position.segment - 1) % 3
                 new_square = [7 - position.square.x - vector[0],
-                              position.square.y - vector[1] - 1]
+                              3 - (position.square.y - vector[1])]
                 return Position(new_segment, new_square)
-            elif 4 <= new_square[0] <= 7:
+            elif 4 <= new_square.x <= 7:
                 new_segment = (position.segment + 1) % 3
                 new_square = [7 - position.square.x - vector[0],
-                              position.square.y - vector[1] - 1]
+                              3 - (position.square.y - vector[1])]
                 return Position(new_segment, new_square)
             else:
                 return None
@@ -59,6 +52,13 @@ def vector_to_position(position, vector):
         positions = [xy_final_position, yx_final_position]
 
     return positions
+
+
+colour_to_segment = {
+    "w": 0,
+    "b": 1,
+    "r": 2
+}
 
 
 def pawn_movegen(board, position, colour):

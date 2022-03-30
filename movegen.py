@@ -1,14 +1,13 @@
 """TODO: Make vector_to_position code not garbage"""
-from time import sleep
 from position import *
 
-from board import *
 
 colour_to_segment = {
     "w": 0,
     "b": 1,
     "r": 2
 }
+
 
 def direction_to_square(position, vector):
     new_square = position.square + Vector2(vector)
@@ -96,8 +95,7 @@ def pawn_movegen(board, position, colour):
 
 def knight_movegen(board, position, colour):
     moves = []
-    vectors = [[-1, -2], [1, -2], [2, -1], [2, 1],
-               [1, 2], [-1, 2], [-2, 1], [-2, -1]]
+    vectors = [[-1, -2], [1, -2], [2, -1], [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1]]
 
     for vector in vectors:
         for position_to_check in vector_to_position(position, vector):
@@ -118,25 +116,23 @@ def bishop_movegen(board, position, colour):
     vectors = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 
     for vector in vectors:
-        moves = moves + iterateMove(board, position, vector, colour)
+        moves += iterate_move(board, position, vector, colour)
     return moves
 
 
-def iterateMove(board, position, vector, colour):
-    validMoves = []
-    newMove = vector_to_position(position, vector)
-    if newMove is not None:
-        for move in newMove:
-            if move is not None:
-                square_occupant = board.position[int(move.segment)][int(
-                    move.square.y)][int(move.square.x)]
-                if square_occupant is None:
-                    validMoves.append(move)
-                    validMoves = validMoves + iterateMove(
-                        board, move, vector if move.segment == position.segment else [-vector[0], -vector[1]], colour)
-                elif square_occupant[0] != colour:
-                    validMoves.append(move)
-    return validMoves
+def iterate_move(board, position, vector, colour):
+    moves = []
+    new_positions = vector_to_position(position, vector)
+    for position_to_check in new_positions:
+        if position_to_check is not None:
+            square_occupant = board.position[int(position_to_check.segment)][int(
+                position_to_check.square.y)][int(position_to_check.square.x)]
+            if square_occupant is None:
+                moves.append(position_to_check)
+                moves += iterate_move(board, position_to_check, vector if position_to_check.segment == position.segment else [-vector[0], -vector[1]], colour)
+            elif square_occupant[0] != colour:
+                moves.append(position_to_check)
+    return moves
 
 
 def rook_movegen(board, position, colour):
@@ -150,7 +146,7 @@ def rook_movegen(board, position, colour):
         while valid_move:
             for position_to_check in vector_to_position(new_position, new_vector):
                 if position_to_check:
-                    if position_to_check.segment != position.segment:
+                    if position_to_check.segment != position.segment:  # Vector changes when segment changes
                         new_vector = [-vector[0], -vector[1]]
                     square_occupant = board.position[int(position_to_check.segment)][int(position_to_check.square.y)][
                         int(position_to_check.square.x)]
@@ -169,6 +165,30 @@ def rook_movegen(board, position, colour):
     return moves
 
 
+def queen_movegen(board, position, colour):
+    moves = bishop_movegen(board, position, colour) + rook_movegen(board, position, colour)
+
+    return moves
+
+
+def king_movegen(board, position, colour):
+    moves = []
+    vectors = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]
+
+    for vector in vectors:
+        for position_to_check in vector_to_position(position, vector):
+            if position_to_check:
+                square_occupant = board.position[int(position_to_check.segment)][int(
+                    position_to_check.square.y)][int(position_to_check.square.x)]
+                if square_occupant is None:
+                    moves.append(position_to_check)
+                else:
+                    if square_occupant[0] != colour:
+                        moves.append(position_to_check)
+
+    return moves
+
+
 def piece_movegen(board, position, colour):
     piece_id = board.position[int(position.segment)][int(
         position.square.y)][int(position.square.x)][1]
@@ -180,5 +200,7 @@ def piece_movegen(board, position, colour):
         return bishop_movegen(board, position, colour)
     elif piece_id == 'r':
         return rook_movegen(board, position, colour)
-    else:
-        return []
+    elif piece_id == 'q':
+        return queen_movegen(board, position, colour)
+    elif piece_id == 'k':
+        return king_movegen(board, position, colour)

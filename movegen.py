@@ -3,6 +3,16 @@ import re
 from sys import api_version
 from typing import List, Union
 from position import *
+from copy import deepcopy
+from board import board_position
+
+
+def make_move(board, start, end):
+    piece_id = board_position[int(start.segment)][int(start.square.y)][int(start.square.x)]  # Get piece id of piece
+    board[int(end.segment)][int(end.square.y)][int(end.square.x)] = piece_id  # Set target square to that id
+    board[int(start.segment)][int(start.square.y)][int(start.square.x)] = None  # Remove starting piece id
+
+    return board
 
 
 def direction_to_square(position: Position, vector):
@@ -65,6 +75,36 @@ def vector_to_position(position: Position, vector: List[float]):
     else:
         return end_pos
 
+
+def in_check(board, colour):
+    king_pos = None
+    for segment in range(3):
+        for y in range(4):
+            for x in range(8):
+                #  Find king of specified colour
+                if board[segment][y][x] is not None and board[segment][y][x] == f'{colour}k':
+                    king_pos = Position(segment, (x, y))
+
+    #  Rook check
+    for move in rook_movegen(board, king_pos, colour):
+        move_piece = board[int(move.segment)][int(move.square.y)][int(move.square.x)]
+        if move_piece is not None:
+            if move_piece[0] != colour and move_piece[1] == "r":
+                return True
+
+    return False
+
+
+def legal_movegen(board, position, moves, colour):
+    legal_moves = []
+    for move in moves:
+        new_board = make_move(board, position, move)
+        if not in_check(new_board, colour):
+            legal_moves.append(move)
+
+    return legal_moves
+
+
 colour_to_segment = {
     "w": 0,
     "b": 1,
@@ -88,7 +128,7 @@ def pawn_movegen(board, position, colour):
     for vector in vectors:
         for position_to_check in vector_to_position(position, vector):
             if position_to_check is not None:
-                square_occupant = board.position[int(position_to_check.segment)][int(
+                square_occupant = board[int(position_to_check.segment)][int(
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is None:
                     moves.append(position_to_check)
@@ -96,7 +136,7 @@ def pawn_movegen(board, position, colour):
     for capture_vector in capture_vectors:
         for position_to_check in vector_to_position(position, capture_vector):
             if position_to_check:
-                square_occupant = board.position[int(position_to_check.segment)][int(
+                square_occupant = board[int(position_to_check.segment)][int(
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is not None and square_occupant[0] != colour:
                     moves.append(position_to_check)
@@ -112,7 +152,7 @@ def knight_movegen(board, position, colour):
     for vector in vectors:
         for position_to_check in vector_to_position(position, vector):
             if position_to_check:
-                square_occupant = board.position[int(position_to_check.segment)][int(
+                square_occupant = board[int(position_to_check.segment)][int(
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is None:
                     moves.append(position_to_check)
@@ -136,7 +176,7 @@ def iterate_move(board, position, vector, colour):
     new_positions = vector_to_position(position, vector)
     for position_to_check in new_positions:
         if position_to_check is not None:
-            square_occupant = board.position[int(position_to_check.segment)][int(
+            square_occupant = board[int(position_to_check.segment)][int(
                 position_to_check.square.y)][int(position_to_check.square.x)]
             if square_occupant is None:
                 moves.append(position_to_check)
@@ -160,7 +200,7 @@ def rook_movegen(board, position, colour):
                 if position_to_check:
                     if position_to_check.segment != position.segment:  # Vector changes when segment changes
                         new_vector = [-vector[0], -vector[1]]
-                    square_occupant = board.position[int(position_to_check.segment)][int(position_to_check.square.y)][
+                    square_occupant = board[int(position_to_check.segment)][int(position_to_check.square.y)][
                         int(position_to_check.square.x)]
                     if square_occupant is None:
                         moves.append(position_to_check)
@@ -178,33 +218,34 @@ def rook_movegen(board, position, colour):
 
 
 def queen_movegen(board, position, colour):
-    moves = bishop_movegen(board, position, colour) + \
-        rook_movegen(board, position, colour)
+    moves = bishop_movegen(board, position, colour) + rook_movegen(board, position, colour)
 
     return moves
 
 
 def king_movegen(board, position, colour):
-    moves = []
+    pseudo_moves = []
     vectors = [[-1, -1], [0, -1], [1, -1],
                [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]
 
     for vector in vectors:
         for position_to_check in vector_to_position(position, vector):
             if position_to_check:
-                square_occupant = board.position[int(position_to_check.segment)][int(
+                square_occupant = board[int(position_to_check.segment)][int(
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is None:
-                    moves.append(position_to_check)
+                    pseudo_moves.append(position_to_check)
                 else:
                     if square_occupant[0] != colour:
-                        moves.append(position_to_check)
+                        pseudo_moves.append(position_to_check)
 
-    return moves
+    legal_moves = legal_movegen(board, position, pseudo_moves, colour)
+
+    return legal_moves
 
 
 def piece_movegen(board, position, colour):
-    piece_id = board.position[int(position.segment)][int(
+    piece_id = board[int(position.segment)][int(
         position.square.y)][int(position.square.x)][1]
     if piece_id == 'p':
         return pawn_movegen(board, position, colour)

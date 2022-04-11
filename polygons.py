@@ -1,6 +1,6 @@
 import math
 from position import *
-from board import *
+from board import board_position
 from shapely.geometry import Point, Polygon
 
 # half_segment_polygon = [  # Entire polygon for half segment 1
@@ -26,7 +26,7 @@ def rotate(origin, point, angle):
     return [qx, qy]
 
 
-def position_to_pixel(position: Position):
+def position_to_pixel(position, board_polygons):
     polygon_points = board_polygons[int(
         position.segment)][int(position.square.y)][int(position.square.x)]
     polygon = Polygon(polygon_points)

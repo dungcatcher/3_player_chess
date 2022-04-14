@@ -1,5 +1,5 @@
 import math
-from position import *
+from classes import *
 from board import board_position
 from shapely.geometry import Point, Polygon
 

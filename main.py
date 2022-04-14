@@ -4,7 +4,7 @@ from movegen import piece_movegen
 from board import board_position
 from polygons import compute_polygons, handle_polygon_resize
 from pieces import Piece
-from position import Position
+from classes import Position, Move
 from shapely.geometry import Point, Polygon
 
 pygame.init()
@@ -50,7 +50,7 @@ def main():
     left_click = False
     selected_piece = None
     selected_piece_moves = []
-    piece_highlighted = False
+    piece_moved = False
 
     while True:
         clock.tick(60)
@@ -62,7 +62,7 @@ def main():
         if selected_piece is not None:
             for move in selected_piece_moves:
                 move_polygon_points = board_polygons[int(
-                    move.segment)][int(move.square.y)][int(move.square.x)]
+                    move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
                 move_polygon = Polygon(move_polygon_points)
                 move_pixel_pos = move_polygon.centroid.coords[:][0]
                 pygame.draw.circle(WINDOW, (255, 0, 0), move_pixel_pos, 10)
@@ -73,16 +73,20 @@ def main():
                         WINDOW, (255, 255, 255), move_polygon_points, width=5)
 
                     if left_click:
-                        print(((move.segment, (move.square.x, move.square.y)),
-                               (selected_piece.segment, (selected_piece.square.x, selected_piece.square.y))))
-                        board_position[int(move.segment)][int(move.square.y)][int(move.square.x)] = \
-                        board_position[  # Set move square to selected piece
-                            int(selected_piece.segment)][int(selected_piece.square.y)][int(selected_piece.square.x)]
+                        if move.promo_type is None:
+                            board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
+                            board_position[  # Set move square to selected piece
+                                int(selected_piece.segment)][int(selected_piece.square.y)][int(selected_piece.square.x)]
+                        else:
+                            print('l')
+                            board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
+                                f'{board_position[int(selected_piece.segment)][int(selected_piece.square.y)][int(selected_piece.square.x)][0]}q'
                         board_position[int(selected_piece.segment)][int(selected_piece.square.y)][
                             int(selected_piece.square.x)] = None
 
                         pieces = refresh_pieces(board_position, board_polygons)
                         selected_piece = None
+                        piece_moved = True
                         selected_piece_moves = []
 
         for piece in pieces:
@@ -94,7 +98,7 @@ def main():
                     piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True
 
-                if left_click:
+                if left_click and not piece_moved:
                     selected_piece = piece.position
                     selected_piece_moves = piece_movegen(board_position, piece.position, piece.colour)
             else:
@@ -103,6 +107,7 @@ def main():
                 piece.highlighted = False
 
         left_click = False
+        piece_moved = False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

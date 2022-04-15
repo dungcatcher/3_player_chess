@@ -83,35 +83,35 @@ def in_check(board, colour):
                     king_pos = Position(segment, (x, y))
 
     # Pawn check
-    for move in pawn_movegen(board, king_pos, colour, only_captures=True):
+    for move in pawn_movegen(board, king_pos, colour, only_captures=True, filter_legal=False):
         move_piece = board[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[1] == "p":
                 return True
 
     # Knight check
-    for move in knight_movegen(board, king_pos, colour):
+    for move in knight_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[1] == "n":
                 return True
 
     # Bishop check
-    for move in bishop_movegen(board, king_pos, colour):
+    for move in bishop_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[1] == "b":
                 return True
 
     # Rook check
-    for move in rook_movegen(board, king_pos, colour):
+    for move in rook_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[1] == "r":
                 return True
 
     # Queen check
-    for move in queen_movegen(board, king_pos, colour):
+    for move in queen_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[1] == "q":
@@ -144,8 +144,8 @@ colour_to_segment = {
 }
 
 
-def pawn_movegen(board, position, colour, only_captures=False):
-    moves = []
+def pawn_movegen(board, position, colour, only_captures=False, filter_legal=True):
+    pseudo_moves = []
 
     capture_vectors = [[-1, -1], [1, -1]]
     if position.square.y == 2 and position.segment == colour_to_segment[colour]:
@@ -165,9 +165,9 @@ def pawn_movegen(board, position, colour, only_captures=False):
                         position_to_check.square.y)][int(position_to_check.square.x)]
                     if square_occupant is None:
                         if colour_to_segment[colour] != position_to_check.segment and position_to_check.square.y == 3:
-                            moves.append(Move(position, position_to_check, promo_type='q'))
+                            pseudo_moves.append(Move(position, position_to_check, promo_type='q'))
                         else:
-                            moves.append(Move(position, position_to_check))
+                            pseudo_moves.append(Move(position, position_to_check))
 
     for capture_vector in capture_vectors:
         for position_to_check in vector_to_position(position, capture_vector):
@@ -176,15 +176,19 @@ def pawn_movegen(board, position, colour, only_captures=False):
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is not None and square_occupant[0] != colour:
                     if colour_to_segment[colour] != position_to_check.segment and position_to_check.square.y == 3:
-                        moves.append(Move(position, position_to_check, promo_type='q'))
+                        pseudo_moves.append(Move(position, position_to_check, promo_type='q'))
                     else:
-                        moves.append(Move(position, position_to_check))
+                        pseudo_moves.append(Move(position, position_to_check))
 
-    return moves
+    if filter_legal:
+        legal_moves = legal_movegen(board, pseudo_moves, colour)
+        return legal_moves
+
+    return pseudo_moves
 
 
-def knight_movegen(board, position, colour):
-    moves = []
+def knight_movegen(board, position, colour, filter_legal=True):
+    pseudo_moves = []
     vectors = [[-1, -2], [1, -2], [2, -1], [2, 1],
                [1, 2], [-1, 2], [-2, 1], [-2, -1]]
 
@@ -194,20 +198,30 @@ def knight_movegen(board, position, colour):
                 square_occupant = board[int(position_to_check.segment)][int(
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is None:
-                    moves.append(Move(position, position_to_check))
+                    pseudo_moves.append(Move(position, position_to_check))
                 else:
                     if square_occupant[0] != colour:
-                        moves.append(Move(position, position_to_check))
-    return moves
+                        pseudo_moves.append(Move(position, position_to_check))
+
+    if filter_legal:
+        legal_moves = legal_movegen(board, pseudo_moves, colour)
+        return legal_moves
+
+    return pseudo_moves
 
 
-def bishop_movegen(board, position, colour):
-    moves = []
+def bishop_movegen(board, position, colour, filter_legal=True):
+    pseudo_moves = []
     vectors = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 
     for vector in vectors:
-        moves += iterate_move(board, position, vector, colour)
-    return moves
+        pseudo_moves += iterate_move(board, position, vector, colour)
+
+    if filter_legal:
+        legal_moves = legal_movegen(board, pseudo_moves, colour)
+        return legal_moves
+
+    return pseudo_moves
 
 
 def iterate_move(board, position, vector, colour):
@@ -226,8 +240,8 @@ def iterate_move(board, position, vector, colour):
     return moves
 
 
-def rook_movegen(board, position, colour):
-    moves = []
+def rook_movegen(board, position, colour, filter_legal=True):
+    pseudo_moves = []
     vectors = [[0, -1], [0, 1], [1, 0], [-1, 0]]
 
     for vector in vectors:
@@ -242,24 +256,32 @@ def rook_movegen(board, position, colour):
                     square_occupant = board[int(position_to_check.segment)][int(position_to_check.square.y)][
                         int(position_to_check.square.x)]
                     if square_occupant is None:
-                        moves.append(Move(position, position_to_check))
+                        pseudo_moves.append(Move(position, position_to_check))
                         new_position = position_to_check
                     else:
                         if square_occupant[0] != colour:
-                            moves.append(Move(position, position_to_check))
+                            pseudo_moves.append(Move(position, position_to_check))
                             valid_move = False
                         else:
                             valid_move = False
                 else:
                     valid_move = False
 
-    return moves
+    if filter_legal:
+        legal_moves = legal_movegen(board, pseudo_moves, colour)
+        return legal_moves
+
+    return pseudo_moves
 
 
-def queen_movegen(board, position, colour):
-    moves = bishop_movegen(board, position, colour) + rook_movegen(board, position, colour)
-    
-    return moves
+def queen_movegen(board, position, colour, filter_legal=True):
+    pseudo_moves = bishop_movegen(board, position, colour, filter_legal) + rook_movegen(board, position, colour, filter_legal)
+
+    if filter_legal:
+        legal_moves = legal_movegen(board, pseudo_moves, colour)
+        return legal_moves
+
+    return pseudo_moves
 
 
 def king_movegen(board, position, colour, filter_legal=True):

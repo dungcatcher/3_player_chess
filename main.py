@@ -1,8 +1,7 @@
 import pygame
 import pygame.freetype
-from movegen import piece_movegen
-from board import board_position
-from polygons import compute_polygons, handle_polygon_resize
+from movegen import piece_movegen, get_game_state
+from board import Board
 from pieces import Piece
 from classes import Position, Move
 from shapely.geometry import Point, Polygon
@@ -32,18 +31,8 @@ def refresh_pieces(board, board_polygons):
 
 
 def main():
-    board_img = pygame.image.load('./Assets/board.png').convert_alpha()
-    board_scale = HEIGHT / board_img.get_height()
-    board_img = pygame.transform.smoothscale(board_img, (board_img.get_width(
-    ) * board_scale, board_img.get_height() * board_scale))
-    board_rect = board_img.get_rect()
-    board_rect.center = WIDTH // 2, HEIGHT // 2
-    margin = (WIDTH - board_rect.width) / 2
-
-    board_polygons = compute_polygons()
-    board_polygons = handle_polygon_resize(board_polygons, board_scale, margin)
-
-    pieces = refresh_pieces(board_position, board_polygons)
+    board = Board((WIDTH, HEIGHT), (WIDTH // 2, HEIGHT // 2))
+    pieces = refresh_pieces(board.position, board.polygons)
 
     bahnschrift = pygame.freetype.SysFont("bahnschrift", 20)
 
@@ -59,13 +48,13 @@ def main():
     while True:
         clock.tick(60)
         WINDOW.fill((255, 255, 255))
-        WINDOW.blit(board_img, board_rect)
+        WINDOW.blit(board.image, board.rect)
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
         if selected_piece is not None:
             for move in selected_piece_moves:
-                move_polygon_points = board_polygons[int(
+                move_polygon_points = board.polygons[int(
                     move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
                 move_polygon = Polygon(move_polygon_points)
                 move_pixel_pos = move_polygon.centroid.coords[:][0]
@@ -78,17 +67,18 @@ def main():
 
                     if left_click:
                         if move.promo_type is None:
-                            board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
-                            board_position[  # Set move square to selected piece
-                                int(selected_piece.segment)][int(selected_piece.square.y)][int(selected_piece.square.x)]
+                            board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
+                                board.position[  # Set move square to selected piece
+                                    int(selected_piece.segment)][int(selected_piece.square.y)][
+                                    int(selected_piece.square.x)]
                         else:
                             print('l')
-                            board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
-                                f'{board_position[int(selected_piece.segment)][int(selected_piece.square.y)][int(selected_piece.square.x)][0]}q'
-                        board_position[int(selected_piece.segment)][int(selected_piece.square.y)][
+                            board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
+                                f'{board.position[int(selected_piece.segment)][int(selected_piece.square.y)][int(selected_piece.square.x)][0]}q'
+                        board.position[int(selected_piece.segment)][int(selected_piece.square.y)][
                             int(selected_piece.square.x)] = None
 
-                        pieces = refresh_pieces(board_position, board_polygons)
+                        pieces = refresh_pieces(board.position, board.polygons)
                         selected_piece = None
                         piece_moved = True
                         selected_piece_moves = []
@@ -106,7 +96,7 @@ def main():
 
                 if left_click and not piece_moved and piece.colour == current_turn:
                     selected_piece = piece.position
-                    selected_piece_moves = piece_movegen(board_position, piece.position, piece.colour)
+                    selected_piece_moves = piece_movegen(board.position, piece.position, piece.colour)
             else:
                 piece.image = piece.original_image
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)

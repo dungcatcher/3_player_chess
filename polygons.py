@@ -1,11 +1,6 @@
 import math
-from classes import *
-from board import board_position
 from shapely.geometry import Point, Polygon
 
-# half_segment_polygon = [  # Entire polygon for half segment 1
-#     [587, 72], [1092, 72], [1092, 946], [335, 509]
-# ]
 half_segment_polygon = [(335, 1382), (1092, 946), (1092, 1820), (587, 1820)]
 
 

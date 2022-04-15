@@ -127,6 +127,22 @@ def in_check(board, colour):
     return False
 
 
+def get_game_state(board, colour):  # Checks for checkmate, stalemate or still playing
+    # Search for all pieces of the same colour
+    for segment in range(3):
+        for y in range(4):
+            for x in range(8):
+                square_occupant = board[segment][y][x]
+                if square_occupant is not None and square_occupant[0] == colour:
+                    if piece_movegen(board, Position(segment, (x, y)), colour):  # There is a legal move so not in checkmate
+                        return "playing"
+                    else:
+                        if in_check(board, colour):
+                            return "checkmate"
+                        else:
+                            return "stalemate"
+
+
 def legal_movegen(board, moves, colour):
     legal_moves = []
     for move in moves:

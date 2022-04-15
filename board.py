@@ -2,8 +2,8 @@ import pygame
 from polygons import compute_polygons, handle_polygon_resize
 
 
-def resize_board(img, screen_height, position):
-    scale = screen_height / img.get_height()
+def resize_board(img, section_size, position):
+    scale = section_size[0] * 0.95 / img.get_width()
     img = pygame.transform.smoothscale(img, (img.get_width() * scale, img.get_height() * scale))
     rect = img.get_rect()
     rect.center = position
@@ -12,7 +12,7 @@ def resize_board(img, screen_height, position):
 
 
 class Board:
-    def __init__(self, screen_size, position):
+    def __init__(self, section_size, position):
         """
         Board is represented as a list of 2d arrays of the 3 8x4 segments
         """
@@ -37,8 +37,10 @@ class Board:
             ]
         ]
         self.image, self.rect, self.scale = resize_board(
-            pygame.image.load('./Assets/board.png'), screen_size[1], position)
-        self.margin = self.rect.left
+            pygame.image.load('./Assets/board.png'), section_size, position)
         self.polygons = compute_polygons()
-        self.polygons = handle_polygon_resize(self.polygons, self.scale, self.margin)
+        self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
 
+        self.turns = ["w", "b", "r"]
+        self.turn_index = 0
+        self.turn = self.turns[self.turn_index]

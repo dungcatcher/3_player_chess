@@ -65,7 +65,7 @@ def compute_polygons():
     return all_polygons
 
 
-def handle_polygon_resize(polygons, new_scale, margin):
+def handle_polygon_resize(polygons, new_scale, offset):
     polygons_copy = [[[[] for x in range(8)]
                       for y in range(4)] for s in range(3)]
     for segment in range(3):
@@ -74,7 +74,7 @@ def handle_polygon_resize(polygons, new_scale, margin):
                 new_point = []
                 for point in polygons[segment][y][x]:
                     new_point.append(
-                        (point[0] * new_scale + margin, point[1] * new_scale))
+                        (point[0] * new_scale + offset[0], point[1] * new_scale + offset[1]))
                 polygons_copy[segment][y][x] = new_point
 
     return polygons_copy

@@ -7,7 +7,7 @@ class Piece:
         self.position = position  # Board position
         self.pixel_pos = pixel_pos
         self.image = pygame.image.load(f'./Assets/pieces/{colour}{identifier}.png').convert_alpha()
-        self.image = pygame.transform.smoothscale(self.image, (45, 45))
+        self.image = pygame.transform.smoothscale(self.image, (40, 40))
         self.original_image = self.image
         self.rect = self.image.get_rect(center=pixel_pos)
         self.highlighted = False

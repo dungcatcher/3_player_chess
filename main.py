@@ -52,6 +52,10 @@ def main():
     selected_piece_moves = []
     piece_moved = False
 
+    turns = ["w", "b", "r"]
+    turn_index = 0
+    current_turn = turns[turn_index]
+
     while True:
         clock.tick(60)
         WINDOW.fill((255, 255, 255))
@@ -88,6 +92,8 @@ def main():
                         selected_piece = None
                         piece_moved = True
                         selected_piece_moves = []
+                        turn_index = (turn_index + 1) % 3
+                        current_turn = turns[turn_index]
 
         for piece in pieces:
             WINDOW.blit(piece.image, piece.rect)
@@ -98,7 +104,7 @@ def main():
                     piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True
 
-                if left_click and not piece_moved:
+                if left_click and not piece_moved and piece.colour == current_turn:
                     selected_piece = piece.position
                     selected_piece_moves = piece_movegen(board_position, piece.position, piece.colour)
             else:

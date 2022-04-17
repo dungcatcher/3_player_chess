@@ -49,12 +49,10 @@ def compute_polygons():
                             if i == 1:  # Points go anti-clockwise
                                 j = 1 if j == 0 else 0
                             top_lerp = lerp_vector(rotated_half_segment_polygon[0 - 3 * half_segment],
-                                                   rotated_half_segment_polygon[1 -
-                                                                                3 * half_segment],
+                                                   rotated_half_segment_polygon[1 - 3 * half_segment],
                                                    (x + i) * 0.25)
                             bottom_lerp = lerp_vector(rotated_half_segment_polygon[3 - 3 * half_segment],
-                                                      rotated_half_segment_polygon[2 -
-                                                                                   3 * half_segment],
+                                                      rotated_half_segment_polygon[2 - 3 * half_segment],
                                                       (x + i) * 0.25)
                             lerp_point = lerp_vector(
                                 top_lerp, bottom_lerp, (y + j) * 0.25)

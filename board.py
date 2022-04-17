@@ -43,7 +43,6 @@ class Board:
             pygame.image.load('./Assets/board.png'), section_size, position)
         self.polygons = compute_polygons()
         self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
-
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]

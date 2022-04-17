@@ -70,7 +70,6 @@ def main():
                         board.turn_index = (board.turn_index + 1) % 3
                         board.turn = board.turns[board.turn_index]
 
-
         for piece in pieces:
             WINDOW.blit(piece.image, piece.rect)
 
@@ -83,6 +82,8 @@ def main():
                 if left_click and not piece_moved and piece.colour == board.turn:
                     selected_piece = piece.position
                     selected_piece_moves = piece_movegen(board.position, piece.position, piece.colour)
+                    for move in selected_piece_moves:
+                        print((move.end.segment, (move.end.square.x, move.end.square.y)))
             else:
                 piece.image = piece.original_image
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)

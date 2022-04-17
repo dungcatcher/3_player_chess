@@ -1,5 +1,8 @@
 import pygame
 from polygons import compute_polygons, handle_polygon_resize
+from shapely.geometry import Polygon
+from pieces import Piece
+from classes import Position
 
 
 def resize_board(img, section_size, position):
@@ -44,3 +47,17 @@ class Board:
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
+
+    def refresh_pieces(self):
+        pieces = []
+        for segment in range(3):
+            for y in range(4):
+                for x in range(8):
+                    if self.position[segment][y][x] is not None:
+                        piece_id = self.position[segment][y][x]
+                        piece_polygon = Polygon(self.polygons[segment][y][x])
+                        piece_pixel_pos = piece_polygon.centroid.coords[:][0]
+                        pieces.append(Piece(piece_id[0], Position(
+                            segment, (x, y)), piece_pixel_pos, piece_id[1]))
+
+        return pieces

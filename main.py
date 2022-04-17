@@ -2,8 +2,7 @@ import pygame
 import pygame.freetype
 from movegen import piece_movegen, get_game_state
 from board import Board
-from pieces import Piece
-from classes import Position, Move
+from movetable import MoveTable, move_to_notation
 from shapely.geometry import Point, Polygon
 
 pygame.init()
@@ -15,25 +14,11 @@ WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 
-def refresh_pieces(board, board_polygons):
-    pieces = []
-    for segment in range(3):
-        for y in range(4):
-            for x in range(8):
-                if board[segment][y][x] is not None:
-                    piece_id = board[segment][y][x]
-                    piece_polygon = Polygon(board_polygons[segment][y][x])
-                    piece_pixel_pos = piece_polygon.centroid.coords[:][0]
-                    pieces.append(Piece(piece_id[0], Position(
-                        segment, (x, y)), piece_pixel_pos, piece_id[1]))
-
-    return pieces
-
-
 def main():
     board_segment_rect = pygame.Rect(0, 0, WIDTH * 0.7, HEIGHT)
     board = Board(board_segment_rect.size, board_segment_rect.center)
-    pieces = refresh_pieces(board.position, board.polygons)
+    move_table = MoveTable((WIDTH, HEIGHT))
+    pieces = board.refresh_pieces()
 
     bahnschrift = pygame.freetype.SysFont("bahnschrift", 20)
 
@@ -44,9 +29,10 @@ def main():
 
     while True:
         clock.tick(60)
-        WINDOW.fill((40, 40, 40))
+        WINDOW.fill((0, 0, 0))
         pygame.draw.rect(WINDOW, (70, 70, 80), board_segment_rect)
         WINDOW.blit(board.image, board.rect)
+        move_table.render(WINDOW)
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -64,6 +50,7 @@ def main():
                         WINDOW, (255, 255, 255), move_polygon_points, width=5)
 
                     if left_click:
+                        move_table.add_move(move, board.position)
                         if move.promo_type is None:
                             board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
                                 board.position[  # Set move square to selected piece
@@ -76,12 +63,13 @@ def main():
                         board.position[int(selected_piece.segment)][int(selected_piece.square.y)][
                             int(selected_piece.square.x)] = None
 
-                        pieces = refresh_pieces(board.position, board.polygons)
+                        pieces = board.refresh_pieces()
                         selected_piece = None
                         piece_moved = True
                         selected_piece_moves = []
                         board.turn_index = (board.turn_index + 1) % 3
                         board.turn = board.turns[board.turn_index]
+
 
         for piece in pieces:
             WINDOW.blit(piece.image, piece.rect)

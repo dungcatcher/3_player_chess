@@ -24,13 +24,14 @@ COORDINATE_TABLE = [
     ]
 ]
 
-title_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 24)
+title_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 20)
 move_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 14)
 
 
 def move_to_notation(move, board_position):
     notation = ""
-
+    print(((move.start.segment, (move.start.square.x, move.start.square.y)),
+           (move.end.segment, (move.end.square.x, move.end.square.y))))
     piece_id = board_position[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)]
     if piece_id[1] != "p":
         notation += piece_id[1].upper()

@@ -231,7 +231,8 @@ def bishop_movegen(board, position, colour, filter_legal=True):
     vectors = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 
     for vector in vectors:
-        pseudo_moves += iterate_move(board, position, vector, colour)
+        for end_position in iterate_move(board, position, vector, colour):
+            pseudo_moves.append(Move(position, end_position))
 
     if filter_legal:
         legal_moves = legal_movegen(board, pseudo_moves, colour)
@@ -241,19 +242,20 @@ def bishop_movegen(board, position, colour, filter_legal=True):
 
 
 def iterate_move(board, position, vector, colour):
-    moves = []
+    end_position = []
     new_positions = vector_to_position(position, vector)
     for position_to_check in new_positions:
         if position_to_check is not None:
             square_occupant = board[int(position_to_check.segment)][int(
                 position_to_check.square.y)][int(position_to_check.square.x)]
             if square_occupant is None:
-                moves.append(Move(position, position_to_check))
-                moves += iterate_move(board, position_to_check, vector if position_to_check.segment ==
+                end_position.append(position_to_check)
+                end_position += iterate_move(board, position_to_check, vector if position_to_check.segment ==
                                       position.segment else [-vector[0], -vector[1]], colour)
             elif square_occupant[0] != colour:
-                moves.append(Move(position, position_to_check))
-    return moves
+                end_position.append(position_to_check)
+
+    return end_position
 
 
 def rook_movegen(board, position, colour, filter_legal=True):

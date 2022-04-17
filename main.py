@@ -7,10 +7,10 @@ from shapely.geometry import Point, Polygon
 
 pygame.init()
 pygame.display.init()
+pygame.display.set_caption("3 player chess")
 
 WIDTH, HEIGHT = 1000, 700
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
-
 clock = pygame.time.Clock()
 
 
@@ -82,8 +82,6 @@ def main():
                 if left_click and not piece_moved and piece.colour == board.turn:
                     selected_piece = piece.position
                     selected_piece_moves = piece_movegen(board.position, piece.position, piece.colour)
-                    for move in selected_piece_moves:
-                        print((move.end.segment, (move.end.square.x, move.end.square.y)))
             else:
                 piece.image = piece.original_image
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)
@@ -92,7 +90,9 @@ def main():
         left_click = False
         piece_moved = False
 
-        bahnschrift.render_to(WINDOW, board_segment_rect.midtop, f"{board.turn}'s turn", fgcolor=(255, 255, 255))
+        title_surface, title_rect = bahnschrift.render("dungcatcher's 3 Player Chess", (255, 255, 255))
+        title_rect.center = (board_segment_rect.centerx, HEIGHT * 0.05)
+        WINDOW.blit(title_surface, title_rect)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

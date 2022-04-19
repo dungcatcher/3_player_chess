@@ -1,9 +1,7 @@
 import pygame
 import pygame.freetype
-from movegen import piece_movegen, get_game_state
 from board import Board
-from movetable import MoveTable, move_to_notation
-from shapely.geometry import Point, Polygon
+from movetable import MoveTable
 
 pygame.init()
 pygame.display.init()
@@ -22,9 +20,6 @@ def main():
     bahnschrift = pygame.freetype.SysFont("bahnschrift", 20)
 
     left_click = False
-    selected_piece = None
-    selected_piece_moves = []
-    piece_moved = False
 
     while True:
         clock.tick(60)

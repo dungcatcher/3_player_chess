@@ -11,3 +11,4 @@ class Piece:
         self.original_image = self.image
         self.rect = self.image.get_rect(center=pixel_pos)
         self.highlighted = False
+        self.moves = []

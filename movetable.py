@@ -1,6 +1,6 @@
 import pygame
 import pygame.freetype
-from movegen import in_check, make_move, piece_movegen, positions_are_same
+from movegen import in_check, in_checkmate, make_move, piece_movegen, positions_are_same
 from classes import Position
 
 pygame.freetype.init()
@@ -78,7 +78,9 @@ def move_to_notation(move, board_position):
     colours = ['w', 'r', 'b']
     for colour in colours:
         if colour != piece_colour:
-            if in_check(new_position, colour):  # Check if the resulting position is in check
+            if in_checkmate(new_position, colour):
+                notation += '#'
+            elif in_check(new_position, colour):  # Check if the resulting position is in check
                 notation += '+'
 
     return notation

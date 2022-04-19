@@ -27,7 +27,8 @@ def main():
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
         WINDOW.blit(board.image, board.rect)
-        board.render(WINDOW, left_click, (mouse_x, mouse_y), move_table)
+        board.handle_mouse_events((mouse_x, mouse_y), left_click, move_table)
+        board.render(WINDOW)
         move_table.render(WINDOW)
 
         left_click = False

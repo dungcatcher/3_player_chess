@@ -318,6 +318,22 @@ def king_movegen(board, position, colour, filter_legal=True):
                     if square_occupant[0] != colour:
                         pseudo_moves.append(Move(position, position_to_check))
 
+    # if castling_rights[colour]['kingside']:
+    #     can_kingside_castle = True
+    #     for i in range(3):
+    #         if i != 0:  # Don't check own square for blockades
+    #             if board[int(position.segment)][int(position.square.y)][int(position.square.x + i)] is not None:
+    #                 can_kingside_castle = False
+    #                 break
+    #         test_move = Move(position, Position(position.segment, (position.square.x + i, position.square.y)))
+    #         new_board = make_move(board, test_move)
+    #         if in_check(new_board, colour):
+    #             can_kingside_castle = False
+    #             break
+    #     if can_kingside_castle:
+    #         castle_move = Move(position, Position(position.segment, (position.square.x + 2, position.square.y)), move_type='kingside castle')
+    #         pseudo_moves.append(castle_move)
+
     if filter_legal:
         legal_moves = legal_movegen(board, pseudo_moves, colour)
         return legal_moves

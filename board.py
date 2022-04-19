@@ -52,6 +52,14 @@ class Board:
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
         self.selected_piece = None
+        self.castling_availability = {
+            'w': {'kingside': True, 'queenside': False},
+            'b': {'kingside': True, 'queenside': False},
+            'r': {'kingside': True, 'queenside': False}
+        }
+
+    def index_position(self, position):  # Helper function to prevent long indexing code
+        return self.position[int(position.segment)][int(position.square.y)][int(position.square.x)]
 
     def refresh_pieces(self):
         new_pieces = []
@@ -66,6 +74,17 @@ class Board:
                             segment, (x, y)), piece_pixel_pos, piece_id[1]))
         self.pieces = new_pieces
 
+    def update_castling_rights(self, move):
+        piece_id = self.index_position(move.end)
+        if piece_id[1] == 'k':
+            self.castling_availability[piece_id[0]]['queenside'] = False
+            self.castling_availability[piece_id[0]]['kingside'] = False
+        elif piece_id[1] == 'r':
+            if move.start.square.x == 0:
+                self.castling_availability[piece_id[0]]['queenside'] = False
+            elif move.start.square.y == 7:
+                self.castling_availability[piece_id[0]]['kingside'] = False
+
     def handle_mouse_events(self, mouse_position, left_click, move_table):
         if self.selected_piece is not None:
             self.move_indicator_surface.fill((0, 0, 0, 0))
@@ -79,15 +98,17 @@ class Board:
 
                 point = Point(mouse_position)
                 if point.within(move_polygon):
-                    pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=5)
+                    pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
 
                     if left_click:
                         move_table.add_move(move, self.position)
+                        # self.update_castling_rights(move)
                         if move.promo_type is None:
-                            self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
-                                self.position[  # Set move square to selected piece
-                                    int(self.selected_piece.position.segment)][int(self.selected_piece.position.square.y)][
-                                    int(self.selected_piece.position.square.x)]
+                            self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = self.index_position(self.selected_piece.position)
+                            if move.move_type == "kingside castle":
+                                castle_colour = self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)][0]
+                                self.position[int(move.start.segment)][3][5] = f'{castle_colour}r'
+                                self.position[int(move.end.segment)][3][7] = None
                         else:
                             self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
                                 f'{self.position[int(self.selected_piece.position.segment)][int(self.selected_piece.position.square.y)][int(self.selected_piece.position.square.x)][0]}q'
@@ -117,12 +138,13 @@ class Board:
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                 piece.highlighted = False
 
-    def render(self, surface, left_click, mouse_position, move_table):
+    def render(self, surface):
         pygame.draw.rect(surface, (70, 70, 80), self.outline_rect)
         surface.blit(self.image, self.rect)
+        for piece in self.pieces:
+            surface.blit(piece.image, piece.rect)
+
         surface.blit(self.move_polygon_surface, (0, 0))
         surface.blit(self.move_indicator_surface, (0, 0))
 
-        self.handle_mouse_events(mouse_position, left_click, move_table)
-        for piece in self.pieces:
-            surface.blit(piece.image, piece.rect)
+

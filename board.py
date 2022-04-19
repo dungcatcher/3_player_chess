@@ -1,6 +1,6 @@
 import pygame
 from polygons import compute_polygons, handle_polygon_resize
-from movegen import piece_movegen
+from movegen import piece_movegen, in_checkmate
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
@@ -101,7 +101,7 @@ class Board:
                     pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
 
                     if left_click:
-                        move_table.add_move(move, self.position)
+                        move_table.add_move(move, self.position, self.selected_piece.colour, self.turns)
                         # self.update_castling_rights(move)
                         if move.promo_type is None:
                             self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = self.index_position(self.selected_piece.position)
@@ -118,7 +118,10 @@ class Board:
                         self.refresh_pieces()
                         self.selected_piece.moves = []
                         self.selected_piece = None
-                        self.turn_index = (self.turn_index + 1) % 3
+                        for turn in self.turns:
+                            if in_checkmate(self.position, turn):
+                                self.turns.remove(turn)
+                        self.turn_index = (self.turn_index + 1) % len(self.turns)
                         self.turn = self.turns[self.turn_index]
         else:
             self.move_indicator_surface.fill((0, 0, 0, 0))

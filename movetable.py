@@ -36,13 +36,13 @@ colour_to_offset = {  # Calculates which column to put the turn based on the col
 }
 
 
-def move_to_notation(move, board_position, turns):
+def move_to_notation(board, move):
     notation = ""
-    piece_colour, piece_id = board_position[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)]
+    piece_colour, piece_id = board.position[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)]
 
     capture = False
-    if board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] is not None \
-            and board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)][0] != piece_id[0]:  # Capture
+    if board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] is not None \
+            and board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)][0] != piece_id[0]:  # Capture
         capture = True
 
     if piece_id != 'p':
@@ -57,8 +57,8 @@ def move_to_notation(move, board_position, turns):
                 for x in range(8):
                     current_position = Position(segment, (x, y))
                     if not positions_are_same(current_position, move.start):  # Don't check itself
-                        if board_position[segment][y][x] is not None and board_position[segment][y][x] == f'{piece_colour}{piece_id}':
-                            for same_piece_move in piece_movegen(board_position, Position(segment, (x, y)), piece_colour):
+                        if board.position[segment][y][x] is not None and board.position[segment][y][x] == f'{piece_colour}{piece_id}':
+                            for same_piece_move in piece_movegen(board, Position(segment, (x, y)), piece_colour):
                                 if positions_are_same(same_piece_move.end, move.end):
                                     same_piece_start_square = COORDINATE_TABLE[segment][y][x]
                                     print(f'Original: {piece_start_square}, Same: {same_piece_start_square}')
@@ -80,8 +80,11 @@ def move_to_notation(move, board_position, turns):
     end_square = COORDINATE_TABLE[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
     notation += end_square
 
-    new_position = make_move(board_position, move)
-    for turn in turns:
+    if move.promo_type is not None:
+        notation += f'={move.promo_type.upper()}'
+
+    new_position = make_move(board, move)
+    for turn in board.turns:
         if turn != piece_colour:
             if in_checkmate(new_position, turn):
                 notation += '#'
@@ -99,9 +102,9 @@ class MoveTable:
         self.moves = [[]]  # [ [ply, ply, ply], ... ]
         self.move = 0
 
-    def add_move(self, move, board_position, colour, turns):
-        move_notation = move_to_notation(move, board_position, turns)
-        if len(self.moves[self.move]) <= len(turns) - 1:
+    def add_move(self, board, move, colour):
+        move_notation = move_to_notation(board, move)
+        if len(self.moves[self.move]) <= len(board.turns) - 1:
             self.moves[self.move].append([move_notation, colour])
         else:
             self.move += 1

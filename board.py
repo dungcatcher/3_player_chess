@@ -1,4 +1,5 @@
 import pygame
+from config import WIDTH, HEIGHT
 from polygons import compute_polygons, handle_polygon_resize
 from movegen import piece_movegen, in_checkmate
 from shapely.geometry import Polygon, Point
@@ -16,7 +17,7 @@ def resize_board(img, section_size, position):
 
 
 class Board:
-    def __init__(self, screen_size):
+    def __init__(self):
         """
         Board is represented as a list of 2d arrays of the 3 8x4 segments
         """
@@ -40,13 +41,13 @@ class Board:
                 ["rr", "rn", "rb", "rq", "rk", "rb", "rn", "rr"]
             ]
         ]
-        self.outline_rect = pygame.Rect(0, 0, screen_size[0] * 0.7, screen_size[1])
+        self.outline_rect = pygame.Rect(0, 0, WIDTH * 0.7, HEIGHT)
         self.image, self.rect, self.scale = resize_board(
             pygame.image.load('./Assets/board.png'), self.outline_rect.size, self.outline_rect.center)
         self.polygons = compute_polygons()
         self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
-        self.move_polygon_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
-        self.move_indicator_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
+        self.move_polygon_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        self.move_indicator_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         self.pieces = []
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
@@ -70,8 +71,9 @@ class Board:
                         piece_id = self.position[segment][y][x]
                         piece_polygon = Polygon(self.polygons[segment][y][x])
                         piece_pixel_pos = piece_polygon.centroid.coords[:][0]
+                        piece_alive = True if piece_id[0] in self.turns else False
                         new_pieces.append(Piece(piece_id[0], Position(
-                            segment, (x, y)), piece_pixel_pos, piece_id[1]))
+                            segment, (x, y)), piece_pixel_pos, piece_id[1], piece_alive))
         self.pieces = new_pieces
 
     def update_castling_rights(self, move):
@@ -101,10 +103,11 @@ class Board:
                     pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
 
                     if left_click:
-                        move_table.add_move(move, self.position, self.selected_piece.colour, self.turns)
+                        move_table.add_move(self, move, self.selected_piece.colour)
                         # self.update_castling_rights(move)
                         if move.promo_type is None:
-                            self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = self.index_position(self.selected_piece.position)
+                            self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
+                                self.index_position(self.selected_piece.position)
                             if move.move_type == "kingside castle":
                                 castle_colour = self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)][0]
                                 self.position[int(move.start.segment)][3][5] = f'{castle_colour}r'
@@ -115,12 +118,12 @@ class Board:
                         self.position[int(self.selected_piece.position.segment)][int(self.selected_piece.position.square.y)][
                             int(self.selected_piece.position.square.x)] = None
 
-                        self.refresh_pieces()
                         self.selected_piece.moves = []
                         self.selected_piece = None
                         for turn in self.turns:
-                            if in_checkmate(self.position, turn):
+                            if in_checkmate(self, turn):
                                 self.turns.remove(turn)
+                        self.refresh_pieces()
                         self.turn_index = (self.turn_index + 1) % len(self.turns)
                         self.turn = self.turns[self.turn_index]
         else:
@@ -135,7 +138,7 @@ class Board:
                     piece.highlighted = True
                 if piece.colour == self.turn and left_click:
                     self.selected_piece = piece
-                    self.selected_piece.moves = piece_movegen(self.position, piece.position, piece.colour)
+                    self.selected_piece.moves = piece_movegen(self, piece.position, piece.colour)
             else:
                 piece.image = piece.original_image
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)

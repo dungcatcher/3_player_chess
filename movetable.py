@@ -46,39 +46,45 @@ def move_to_notation(board, move):
         capture = True
 
     if piece_id != 'p':
-        notation += piece_id.upper()
+        if move.move_type != "kingside castle" and move.move_type != "queenside castle":
+            notation += piece_id.upper()
 
-        piece_start_square = COORDINATE_TABLE[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)]
-        specify_file = False
-        specify_rank = False
-        #  Search for pieces that can also play that move
-        for segment in range(3):
-            for y in range(4):
-                for x in range(8):
-                    current_position = Position(segment, (x, y))
-                    if not positions_are_same(current_position, move.start):  # Don't check itself
-                        if board.position[segment][y][x] is not None and board.position[segment][y][x] == f'{piece_colour}{piece_id}':
-                            for same_piece_move in piece_movegen(board, Position(segment, (x, y)), piece_colour):
-                                if positions_are_same(same_piece_move.end, move.end):
-                                    same_piece_start_square = COORDINATE_TABLE[segment][y][x]
-                                    print(f'Original: {piece_start_square}, Same: {same_piece_start_square}')
-                                    if piece_start_square[0] != same_piece_start_square[0]:
-                                        specify_file = True
-                                    elif piece_start_square[1] != same_piece_start_square[1]:
-                                        specify_rank = True
-        if specify_file:
-            notation += piece_start_square[0]
-        if specify_rank:
-            notation += piece_start_square[1]
-        if capture:
-            notation += 'x'
+            piece_start_square = COORDINATE_TABLE[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)]
+            specify_file = False
+            specify_rank = False
+            #  Search for pieces that can also play that move
+            for segment in range(3):
+                for y in range(4):
+                    for x in range(8):
+                        current_position = Position(segment, (x, y))
+                        if not positions_are_same(current_position, move.start):  # Don't check itself
+                            if board.position[segment][y][x] is not None and board.position[segment][y][x] == f'{piece_colour}{piece_id}':
+                                for same_piece_move in piece_movegen(board, Position(segment, (x, y)), piece_colour):
+                                    if positions_are_same(same_piece_move.end, move.end):
+                                        same_piece_start_square = COORDINATE_TABLE[segment][y][x]
+                                        print(f'Original: {piece_start_square}, Same: {same_piece_start_square}')
+                                        if piece_start_square[0] != same_piece_start_square[0]:
+                                            specify_file = True
+                                        elif piece_start_square[1] != same_piece_start_square[1]:
+                                            specify_rank = True
+            if specify_file:
+                notation += piece_start_square[0]
+            if specify_rank:
+                notation += piece_start_square[1]
+            if capture:
+                notation += 'x'
+        elif move.move_type == "kingside castle":
+            notation += '0-0'
+        elif move.move_type == "queenside castle":
+            notation += '0-0-0'
     else:
         if capture:
             start_file = COORDINATE_TABLE[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)][0]
             notation += f'{start_file}x'
 
     end_square = COORDINATE_TABLE[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
-    notation += end_square
+    if move.move_type != "kingside castle" and move.move_type != "queenside castle":
+        notation += end_square
 
     if move.promo_type is not None:
         notation += f'={move.promo_type.upper()}'

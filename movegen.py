@@ -7,14 +7,17 @@ from copy import copy, deepcopy
 def make_move(board, move):
     new_board_position = deepcopy(board.position)
     piece_id = board.index_position(move.start)
-    if move.promo_type is None:
-        new_board_position[int(move.end.segment)][int(move.end.square.y)][
-            int(move.end.square.x)] = piece_id  # Set target square to that id
-    else:
-        new_board_position[int(move.end.segment)][int(move.end.square.y)][
-            int(move.end.square.x)] = f'{piece_id[0]}{move.promo_type}'
-    new_board_position[int(move.start.segment)][int(move.start.square.y)][
-        int(move.start.square.x)] = None  # Remove starting piece id
+    new_board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = piece_id  # Set target square to that id
+    if move.move_type == "kingside castle":
+        new_board_position[int(move.start.segment)][3][5] = f'{piece_id[0]}r'  # Move the rook
+        new_board_position[int(move.end.segment)][3][7] = None
+    elif move.move_type == "queenside castle":
+        new_board_position[int(move.start.segment)][3][3] = f'{piece_id[0]}r'
+        new_board_position[int(move.end.segment)][3][0] = None
+    elif move.move_type == "enpassant":
+        new_board_position[int(move.end.segment)][int(move.end.square.y - 1)][int(move.end.square.x)] = None
+    new_board_position[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)] = None  # Remove starting piece id
+
     new_board = copy(board)
     new_board.position = new_board_position
 
@@ -95,42 +98,42 @@ def in_check(board, colour):
     for move in pawn_movegen(board, king_pos, colour, only_captures=True, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[1] == "p":
+            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "p":
                 return True
 
     # Knight check
     for move in knight_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[1] == "n":
+            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "n":
                 return True
 
     # Bishop check
     for move in bishop_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[1] == "b":
+            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "b":
                 return True
 
     # Rook check
     for move in rook_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[1] == "r":
+            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "r":
                 return True
 
     # Queen check
     for move in queen_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[1] == "q":
+            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "q":
                 return True
 
     # King check
     for move in king_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[1] == "k":
+            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "k":
                 return True
 
     return False
@@ -187,8 +190,11 @@ def pawn_movegen(board, position, colour, only_captures=False, filter_legal=True
                     square_occupant = board.position[int(position_to_check.segment)][int(
                         position_to_check.square.y)][int(position_to_check.square.x)]
                     if square_occupant is None:
-                        if colour_to_segment[colour] != position_to_check.segment and position_to_check.square.y == 3:
-                            pseudo_moves.append(Move(position, position_to_check, promo_type='q'))
+                        if vector[1] == -2:
+                            pseudo_moves.append(Move(position, position_to_check, move_type="double push"))
+                        #  Promotions
+                        elif position_to_check.segment != colour_to_segment[colour] and position_to_check.square.y == 3:
+                            pseudo_moves.append(Move(position, position_to_check, is_promotion=True))
                         else:
                             pseudo_moves.append(Move(position, position_to_check))
 
@@ -198,10 +204,15 @@ def pawn_movegen(board, position, colour, only_captures=False, filter_legal=True
                 square_occupant = board.position[int(position_to_check.segment)][int(
                     position_to_check.square.y)][int(position_to_check.square.x)]
                 if square_occupant is not None and square_occupant[0] != colour:
-                    if colour_to_segment[colour] != position_to_check.segment and position_to_check.square.y == 3:
-                        pseudo_moves.append(Move(position, position_to_check, promo_type='q'))
+                    if position_to_check.segment != colour_to_segment[colour] and position_to_check.square.y == 3:
+                        pseudo_moves.append(Move(position, position_to_check, is_promotion=True))
                     else:
                         pseudo_moves.append(Move(position, position_to_check))
+                elif square_occupant is None:
+                    for turn in board.turns:
+                        if turn != colour:
+                            if positions_are_same(position_to_check, board.enpassant_squares[turn]):
+                                pseudo_moves.append(Move(position, position_to_check, move_type="enpassant"))
 
     if filter_legal:
         legal_moves = legal_movegen(board, pseudo_moves, colour)
@@ -257,10 +268,8 @@ def iterate_move(board, position, vector, colour):
                 position_to_check.square.y)][int(position_to_check.square.x)]
             if square_occupant is None:
                 end_position.append(position_to_check)
-                end_position += iterate_move(board, position_to_check, vector if position_to_check.segment ==
-                                                                                 position.segment else [-vector[0],
-                                                                                                        -vector[1]],
-                                             colour)
+                end_position += iterate_move(board, position_to_check, vector if position_to_check.segment == position.segment
+                        else [-vector[0], -vector[1]], colour)
             elif square_occupant[0] != colour:
                 end_position.append(position_to_check)
 
@@ -302,8 +311,7 @@ def rook_movegen(board, position, colour, filter_legal=True):
 
 
 def queen_movegen(board, position, colour, filter_legal=True):
-    pseudo_moves = bishop_movegen(board, position, colour, filter_legal) + rook_movegen(board, position, colour,
-                                                                                        filter_legal)
+    pseudo_moves = bishop_movegen(board, position, colour, filter_legal) + rook_movegen(board, position, colour, filter_legal)
 
     if filter_legal:
         legal_moves = legal_movegen(board, pseudo_moves, colour)

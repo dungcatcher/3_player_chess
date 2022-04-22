@@ -1,7 +1,7 @@
 import pygame
 from config import WIDTH, HEIGHT
 from polygons import compute_polygons, handle_polygon_resize
-from movegen import piece_movegen, in_checkmate
+from movegen import piece_movegen, in_checkmate, make_move
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
@@ -26,7 +26,7 @@ class Board:
                 [None, None, None, None, None, None, None, None],
                 [None, None, None, None, None, None, None, None],
                 ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-                ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"]
+                ["wr", "wn", "wb", 'wq', "wk", "wb", "wn", "wr"]
             ],
             [  # Black segment
                 [None, None, None, None, None, None, None, None],
@@ -48,6 +48,7 @@ class Board:
         self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
         self.move_polygon_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         self.move_indicator_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        self.promotion_selector_surface = pygame.Surface(self.outline_rect.size, pygame.SRCALPHA)
         self.pieces = []
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
@@ -58,6 +59,10 @@ class Board:
             'b': {'kingside': True, 'queenside': True},
             'r': {'kingside': True, 'queenside': True}
         }
+        self.enpassant_squares = {  # Squares that can be taken en passant
+            'w': None, 'b': None, 'r': None
+        }
+        self.in_promotion_selector = False
 
     def index_position(self, position):  # Helper function to prevent long indexing code
         return self.position[int(position.segment)][int(position.square.y)][int(position.square.x)]
@@ -108,23 +113,18 @@ class Board:
                     if left_click:
                         move_table.add_move(self, move, self.selected_piece.colour)
                         self.update_castling_rights(move)
-                        if move.promo_type is None:
-                            self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
-                                self.index_position(self.selected_piece.position)
-                            if move.move_type == "kingside castle":
-                                castle_colour = self.index_position(move.end)[0]
-                                self.position[int(move.start.segment)][3][5] = f'{castle_colour}r'  # Move the rook
-                                self.position[int(move.end.segment)][3][7] = None
-                            elif move.move_type == "queenside castle":
-                                castle_colour = self.index_position(move.end)[0]
-                                self.position[int(move.start.segment)][3][3] = f'{castle_colour}r'
-                                self.position[int(move.end.segment)][3][0] = None
+                        if not move.is_promotion:
+                            self.position = make_move(self, move).position  # Make the move on the board
                         else:
-                            self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
-                                f'{self.position[int(self.selected_piece.position.segment)][int(self.selected_piece.position.square.y)][int(self.selected_piece.position.square.x)][0]}q'
-                        self.position[int(self.selected_piece.position.segment)][int(self.selected_piece.position.square.y)][
-                            int(self.selected_piece.position.square.x)] = None
+                            self.promotion_selector_surface.fill((0, 0, 0, 50))
+                            for i in range(4):  # Loop through the four y values from the promotion square in the segment
+                                polygon = self.polygons[int(move.end.segment)][int(move.end.square.x)][int(move.end.square.y - i)]
+                                pygame.draw.polygon(self.promotion_selector_surface, (0, 0, 0), polygon)
 
+                        self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
+                        if move.move_type == "double push":
+                            self.enpassant_squares[self.selected_piece.colour] = \
+                                Position(move.end.segment, (move.end.square.x, move.end.square.y + 1))
                         self.selected_piece.moves = []
                         self.selected_piece = None
                         for turn in self.turns:
@@ -143,7 +143,7 @@ class Board:
                     piece.image = pygame.transform.smoothscale(piece.image, (60, 60))
                     piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True
-                if piece.colour == self.turn and left_click:
+                if piece.colour == self.turn and left_click and not self.in_promotion_selector:
                     self.selected_piece = piece
                     self.selected_piece.moves = piece_movegen(self, piece.position, piece.colour)
             else:
@@ -159,5 +159,7 @@ class Board:
 
         surface.blit(self.move_polygon_surface, (0, 0))
         surface.blit(self.move_indicator_surface, (0, 0))
+        if self.in_promotion_selector:
+            surface.blit(self.promotion_selector_surface, self.outline_rect.topleft)
 
 

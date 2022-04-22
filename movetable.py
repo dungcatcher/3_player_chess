@@ -44,6 +44,8 @@ def move_to_notation(board, move):
     if board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] is not None \
             and board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)][0] != piece_id[0]:  # Capture
         capture = True
+    if move.move_type == "enpassant":
+        capture = True
 
     if piece_id != 'p':
         if move.move_type != "kingside castle" and move.move_type != "queenside castle":
@@ -86,13 +88,14 @@ def move_to_notation(board, move):
     if move.move_type != "kingside castle" and move.move_type != "queenside castle":
         notation += end_square
 
-    if move.promo_type is not None:
-        notation += f'={move.promo_type.upper()}'
+    # if move.promo_type is not None:
+    #     notation += f'={move.promo_type.upper()}'
 
     new_position = make_move(board, move)
     for turn in board.turns:
         if turn != piece_colour:
             if in_checkmate(new_position, turn):
+                print('checkmate')
                 notation += '#'
             elif in_check(new_position, turn):  # Check if the resulting position is in check
                 notation += '+'

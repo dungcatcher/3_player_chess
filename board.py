@@ -53,10 +53,10 @@ class Board:
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
         self.selected_piece = None
-        self.castling_availability = {
-            'w': {'kingside': True, 'queenside': False},
-            'b': {'kingside': True, 'queenside': False},
-            'r': {'kingside': True, 'queenside': False}
+        self.castling_rights = {
+            'w': {'kingside': True, 'queenside': True},
+            'b': {'kingside': True, 'queenside': True},
+            'r': {'kingside': True, 'queenside': True}
         }
 
     def index_position(self, position):  # Helper function to prevent long indexing code
@@ -77,15 +77,18 @@ class Board:
         self.pieces = new_pieces
 
     def update_castling_rights(self, move):
-        piece_id = self.index_position(move.end)
-        if piece_id[1] == 'k':
-            self.castling_availability[piece_id[0]]['queenside'] = False
-            self.castling_availability[piece_id[0]]['kingside'] = False
-        elif piece_id[1] == 'r':
-            if move.start.square.x == 0:
-                self.castling_availability[piece_id[0]]['queenside'] = False
-            elif move.start.square.y == 7:
-                self.castling_availability[piece_id[0]]['kingside'] = False
+        piece_colour = self.index_position(move.start)[0]
+
+        king_square = self.index_position(Position(move.start.segment, (4, 3)))
+        if king_square is None or king_square != f'{piece_colour}k':  # If the king is not on its start square it has moved
+            self.castling_rights[piece_colour]['queenside'] = False
+            self.castling_rights[piece_colour]['kingside'] = False
+        kingside_rook_square = self.index_position(Position(move.start.segment, (7, 3)))
+        if kingside_rook_square is None or kingside_rook_square != f'{piece_colour}r':
+            self.castling_rights[piece_colour]['kingside'] = False
+        queenside_rook_square = self.index_position(Position(move.start.segment, (0, 3)))
+        if queenside_rook_square is None or queenside_rook_square != f'{piece_colour}r':
+            self.castling_rights[piece_colour]['queenside'] = False
 
     def handle_mouse_events(self, mouse_position, left_click, move_table):
         if self.selected_piece is not None:
@@ -104,14 +107,18 @@ class Board:
 
                     if left_click:
                         move_table.add_move(self, move, self.selected_piece.colour)
-                        # self.update_castling_rights(move)
+                        self.update_castling_rights(move)
                         if move.promo_type is None:
                             self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
                                 self.index_position(self.selected_piece.position)
                             if move.move_type == "kingside castle":
-                                castle_colour = self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)][0]
-                                self.position[int(move.start.segment)][3][5] = f'{castle_colour}r'
+                                castle_colour = self.index_position(move.end)[0]
+                                self.position[int(move.start.segment)][3][5] = f'{castle_colour}r'  # Move the rook
                                 self.position[int(move.end.segment)][3][7] = None
+                            elif move.move_type == "queenside castle":
+                                castle_colour = self.index_position(move.end)[0]
+                                self.position[int(move.start.segment)][3][3] = f'{castle_colour}r'
+                                self.position[int(move.end.segment)][3][0] = None
                         else:
                             self.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = \
                                 f'{self.position[int(self.selected_piece.position.segment)][int(self.selected_piece.position.square.y)][int(self.selected_piece.position.square.x)][0]}q'

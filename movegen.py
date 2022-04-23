@@ -16,6 +16,7 @@ def make_move(board, move):
         new_board_position[int(move.end.segment)][3][0] = None
     elif move.move_type == "enpassant":
         new_board_position[int(move.end.segment)][int(move.end.square.y - 1)][int(move.end.square.x)] = None
+
     new_board_position[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)] = None  # Remove starting piece id
 
     new_board = copy(board)
@@ -163,6 +164,17 @@ def legal_movegen(board, moves, colour):
     return legal_moves
 
 
+def check_promotion(pawn_position, colour):
+    if pawn_position.segment != colour_to_segment[colour]:
+        if pawn_position.square.y == 3:  # Opponent's back rank
+            return True
+        if pawn_position.segment == (colour_to_segment[colour] + 1) % 3 and pawn_position.square.x == 7:
+            return True
+        if pawn_position.segment == (colour_to_segment[colour] - 1) % 3 and pawn_position.square.x == 0:
+            return True
+
+    return False
+
 colour_to_segment = {
     "w": 0,
     "b": 1,
@@ -180,39 +192,41 @@ def pawn_movegen(board, position, colour, only_captures=False, filter_legal=True
         if colour_to_segment[colour] == position.segment:
             vectors = [[0, -1]]
         else:
-            vectors = [[0, 1]]
-            capture_vectors = [[-1, 1], [1, 1]]
+            vectors = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+            capture_vectors = [[-1, 1], [1, 1], [1, -1], [-1, -1]]
 
     if not only_captures:
         for vector in vectors:
             for position_to_check in vector_to_position(position, vector):
                 if position_to_check is not None:
-                    square_occupant = board.position[int(position_to_check.segment)][int(
-                        position_to_check.square.y)][int(position_to_check.square.x)]
-                    if square_occupant is None:
-                        if vector[1] == -2:
-                            pseudo_moves.append(Move(position, position_to_check, move_type="double push"))
-                        #  Promotions
-                        elif position_to_check.segment != colour_to_segment[colour] and position_to_check.square.y == 3:
-                            pseudo_moves.append(Move(position, position_to_check, is_promotion=True))
-                        else:
-                            pseudo_moves.append(Move(position, position_to_check))
+                    if not (position_to_check.segment == colour_to_segment[colour] and position.segment != colour_to_segment[colour]):
+                        square_occupant = board.position[int(position_to_check.segment)][int(
+                            position_to_check.square.y)][int(position_to_check.square.x)]
+                        if square_occupant is None:
+                            if vector[1] == -2:
+                                pseudo_moves.append(Move(position, position_to_check, move_type="double push"))
+                            #  Promotions
+                            elif check_promotion(position_to_check, colour):
+                                pseudo_moves.append(Move(position, position_to_check, is_promotion=True))
+                            else:
+                                pseudo_moves.append(Move(position, position_to_check))
 
     for capture_vector in capture_vectors:
         for position_to_check in vector_to_position(position, capture_vector):
             if position_to_check:
-                square_occupant = board.position[int(position_to_check.segment)][int(
-                    position_to_check.square.y)][int(position_to_check.square.x)]
-                if square_occupant is not None and square_occupant[0] != colour:
-                    if position_to_check.segment != colour_to_segment[colour] and position_to_check.square.y == 3:
-                        pseudo_moves.append(Move(position, position_to_check, is_promotion=True))
-                    else:
-                        pseudo_moves.append(Move(position, position_to_check))
-                elif square_occupant is None:
-                    for turn in board.turns:
-                        if turn != colour:
-                            if positions_are_same(position_to_check, board.enpassant_squares[turn]):
-                                pseudo_moves.append(Move(position, position_to_check, move_type="enpassant"))
+                if not (position_to_check.segment == colour_to_segment[colour] and position.segment != colour_to_segment[colour]):
+                    square_occupant = board.position[int(position_to_check.segment)][int(
+                        position_to_check.square.y)][int(position_to_check.square.x)]
+                    if square_occupant is not None and square_occupant[0] != colour:
+                        if check_promotion(position_to_check, colour):
+                            pseudo_moves.append(Move(position, position_to_check, is_promotion=True))
+                        else:
+                            pseudo_moves.append(Move(position, position_to_check))
+                    elif square_occupant is None:
+                        for turn in board.turns:
+                            if turn != colour:
+                                if positions_are_same(position_to_check, board.enpassant_squares[turn]):
+                                    pseudo_moves.append(Move(position, position_to_check, move_type="enpassant"))
 
     if filter_legal:
         legal_moves = legal_movegen(board, pseudo_moves, colour)

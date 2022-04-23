@@ -31,7 +31,7 @@ class Board:
             [  # Black segment
                 [None, None, None, None, None, None, None, None],
                 [None, None, None, None, None, None, None, None],
-                ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+                ["bp", "bp", "bp", "bp", "bp", "bp", "wp", "bp"],
                 ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"]
             ],
             [  # Red segment
@@ -63,6 +63,15 @@ class Board:
             'w': None, 'b': None, 'r': None
         }
         self.in_promotion_selector = False
+        self.promotion_selection_list = ['q', 'r', 'b', 'n']
+        self.promotion_selection_images = {
+            'w': [], 'b': [], 'r': []
+        }
+        self.promotion_move = None  #  Stores the move if a promotion happens
+        for colour in self.turns:  # Load images for promotion selection
+            for piece in self.promotion_selection_list:
+                image = pygame.image.load(f'./Assets/pieces/{colour}{piece}.png')
+                self.promotion_selection_images[colour].append(image)
 
     def index_position(self, position):  # Helper function to prevent long indexing code
         return self.position[int(position.segment)][int(position.square.y)][int(position.square.x)]
@@ -96,7 +105,7 @@ class Board:
             self.castling_rights[piece_colour]['queenside'] = False
 
     def handle_mouse_events(self, mouse_position, left_click, move_table):
-        if self.selected_piece is not None:
+        if self.selected_piece is not None and not self.in_promotion_selector:
             self.move_indicator_surface.fill((0, 0, 0, 0))
             self.move_polygon_surface.fill((0, 0, 0, 0))  # Fill transparent
             for move in self.selected_piece.moves:
@@ -111,20 +120,54 @@ class Board:
                     pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
 
                     if left_click:
-                        move_table.add_move(self, move, self.selected_piece.colour)
                         self.update_castling_rights(move)
                         if not move.is_promotion:
+                            move_table.add_move(self, move, self.selected_piece.colour)
                             self.position = make_move(self, move).position  # Make the move on the board
+                            self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
+                            if move.move_type == "double push":
+                                self.enpassant_squares[self.selected_piece.colour] = \
+                                    Position(move.end.segment, (move.end.square.x, move.end.square.y + 1))
+                            self.selected_piece.moves = []
+                            self.selected_piece = None
+                            for turn in self.turns:
+                                if in_checkmate(self, turn):
+                                    self.turns.remove(turn)
+                            self.refresh_pieces()
+                            self.turn_index = (self.turn_index + 1) % len(self.turns)
+                            self.turn = self.turns[self.turn_index]
                         else:
-                            self.promotion_selector_surface.fill((0, 0, 0, 50))
-                            for i in range(4):  # Loop through the four y values from the promotion square in the segment
-                                polygon = self.polygons[int(move.end.segment)][int(move.end.square.x)][int(move.end.square.y - i)]
-                                pygame.draw.polygon(self.promotion_selector_surface, (0, 0, 0), polygon)
+                            self.in_promotion_selector = True
+                            self.promotion_move = move
+                            left_click = False
 
+        else:
+            self.move_indicator_surface.fill((0, 0, 0, 0))
+            self.move_polygon_surface.fill((0, 0, 0, 0))  # Fill transparent
+
+        if self.in_promotion_selector:
+            self.promotion_selector_surface.fill((0, 0, 0, 50))
+            for i in range(4):  # Loop through the four y values from the promotion square in the segment
+                selection_polygon_points = self.polygons[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y - i)][
+                    int(self.promotion_move.end.square.x)]
+                pygame.draw.polygon(self.promotion_selector_surface, (0, 0, 0), selection_polygon_points)
+                selection_polygon = Polygon(selection_polygon_points)
+                selection_polygon_centre = selection_polygon.centroid.coords[:][0]
+                selection_image = self.promotion_selection_images[self.selected_piece.colour][i]
+                selection_image = pygame.transform.smoothscale(selection_image, (40, 40))
+                selection_image_rect = selection_image.get_rect(center=selection_polygon_centre)
+                self.promotion_selector_surface.blit(selection_image, selection_image_rect)
+                point = Point(mouse_position)
+
+                if point.within(selection_polygon):
+                    pygame.draw.polygon(self.promotion_selector_surface, (255, 255, 255), selection_polygon_points, 3)
+                    if left_click:
+                        self.promotion_move.promo_type = self.promotion_selection_list[i]
+                        move_table.add_move(self, self.promotion_move, self.selected_piece.colour)
+                        self.position = make_move(self, self.promotion_move).position  # Make the move on the board
+                        self.position[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
+                            int(self.promotion_move.end.square.x)] = self.selected_piece.colour + self.promotion_move.promo_type
                         self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
-                        if move.move_type == "double push":
-                            self.enpassant_squares[self.selected_piece.colour] = \
-                                Position(move.end.segment, (move.end.square.x, move.end.square.y + 1))
                         self.selected_piece.moves = []
                         self.selected_piece = None
                         for turn in self.turns:
@@ -133,17 +176,16 @@ class Board:
                         self.refresh_pieces()
                         self.turn_index = (self.turn_index + 1) % len(self.turns)
                         self.turn = self.turns[self.turn_index]
-        else:
-            self.move_indicator_surface.fill((0, 0, 0, 0))
-            self.move_polygon_surface.fill((0, 0, 0, 0))  # Fill transparent
+                        self.in_promotion_selector = False
+                        break
 
         for piece in self.pieces:
-            if piece.rect.collidepoint(mouse_position):
+            if piece.rect.collidepoint(mouse_position) and not self.in_promotion_selector:
                 if not piece.highlighted:
                     piece.image = pygame.transform.smoothscale(piece.image, (60, 60))
                     piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True
-                if piece.colour == self.turn and left_click and not self.in_promotion_selector:
+                if piece.colour == self.turn and left_click:
                     self.selected_piece = piece
                     self.selected_piece.moves = piece_movegen(self, piece.position, piece.colour)
             else:

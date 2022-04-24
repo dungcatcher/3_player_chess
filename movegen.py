@@ -140,18 +140,24 @@ def in_check(board, colour):
     return False
 
 
-def in_checkmate(board, colour):  # Checks for checkmate, stalemate or still playing
+def get_game_state(board, colour):  # Checks for checkmate, stalemate or still playing
+    legal_move_found = False
     # Search for all pieces of the same colour
     for segment in range(3):
         for y in range(4):
             for x in range(8):
                 square_occupant = board.position[segment][y][x]
                 if square_occupant is not None and square_occupant[0] == colour:
-                    if piece_movegen(board, Position(segment, (x, y)),
-                                     colour):  # If there is a legal move it isn't checkmate
-                        return False
+                    if piece_movegen(board, Position(segment, (x, y)), colour):
+                        legal_move_found = True
 
-    return True
+    if not legal_move_found:
+        if in_check(board, colour):
+            return "checkmate"
+        else:
+            return "stalemate"
+    else:
+        return "playing"
 
 
 def legal_movegen(board, moves, colour):
@@ -168,12 +174,14 @@ def check_promotion(pawn_position, colour):
     if pawn_position.segment != colour_to_segment[colour]:
         if pawn_position.square.y == 3:  # Opponent's back rank
             return True
+        # Furthest away ranks
         if pawn_position.segment == (colour_to_segment[colour] + 1) % 3 and pawn_position.square.x == 7:
             return True
         if pawn_position.segment == (colour_to_segment[colour] - 1) % 3 and pawn_position.square.x == 0:
             return True
 
     return False
+
 
 colour_to_segment = {
     "w": 0,
@@ -357,13 +365,17 @@ def king_movegen(board, position, colour, filter_legal=True):
             can_kingside_castle = True
             for i in range(3):
                 if i != 0:  # Don't check own square for blockades
-                    if board.position[int(position.segment)][int(position.square.y)][int(position.square.x + i)] is not None:
-                        can_kingside_castle = False
-                        break
-                    #  Check castling squares for checks
-                    test_move = Move(position, Position(position.segment, (position.square.x + i, position.square.y)))
-                    new_board = make_move(board, test_move)
-                    if in_check(new_board, colour):
+                    if 0 <= position.square.x + i <= 7: # If the check square is on the board
+                        if board.position[int(position.segment)][int(position.square.y)][int(position.square.x + i)] is not None:
+                            can_kingside_castle = False
+                            break
+                        #  Check castling squares for checks
+                        test_move = Move(position, Position(position.segment, (position.square.x + i, position.square.y)))
+                        new_board = make_move(board, test_move)
+                        if in_check(new_board, colour):
+                            can_kingside_castle = False
+                            break
+                    else:
                         can_kingside_castle = False
                         break
                 if in_check(board, colour):  # Check if the king is in check
@@ -377,15 +389,19 @@ def king_movegen(board, position, colour, filter_legal=True):
             can_queenside_castle = True
             for i in range(4):
                 if i != 0:  # Don't check own square for blockades
-                    if board.position[int(position.segment)][int(position.square.y)][int(position.square.x - i)] is not None:
-                        can_queenside_castle = False
-                        break
-                    if i != 3:  # Don't check square next to rook for checks
-                        test_move = Move(position, Position(position.segment, (position.square.x - i, position.square.y)))
-                        new_board = make_move(board, test_move)
-                        if in_check(new_board, colour):
+                    if 0 <= position.square.x - i <= 7:
+                        if board.position[int(position.segment)][int(position.square.y)][int(position.square.x - i)] is not None:
                             can_queenside_castle = False
                             break
+                        if i != 3:  # Don't check square next to rook for checks
+                            test_move = Move(position, Position(position.segment, (position.square.x - i, position.square.y)))
+                            new_board = make_move(board, test_move)
+                            if in_check(new_board, colour):
+                                can_queenside_castle = False
+                                break
+                    else:
+                        can_queenside_castle = False
+                        break
                 if in_check(board, colour):
                     can_queenside_castle = False
                     break

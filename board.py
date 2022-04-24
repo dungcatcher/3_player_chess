@@ -1,7 +1,9 @@
+"""TODO: Clean up handle mouse event code"""
+
 import pygame
 from config import WIDTH, HEIGHT
 from polygons import compute_polygons, handle_polygon_resize
-from movegen import piece_movegen, in_checkmate, make_move
+from movegen import piece_movegen, get_game_state, make_move
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
@@ -31,8 +33,8 @@ class Board:
             [  # Black segment
                 [None, None, None, None, None, None, None, None],
                 [None, None, None, None, None, None, None, None],
-                ["bp", "bp", "bp", "bp", "bp", "bp", "wp", "bp"],
-                ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"]
+                [None, None, None, None, None, "wq", None, None],
+                [None, None, None, None, None, None, None, "bk"]
             ],
             [  # Red segment
                 [None, None, None, None, None, None, None, None],
@@ -53,6 +55,8 @@ class Board:
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
+        self.stalemated_players = None
+        self.checkmated_players = None
         self.selected_piece = None
         self.castling_rights = {
             'w': {'kingside': True, 'queenside': True},
@@ -85,7 +89,10 @@ class Board:
                         piece_id = self.position[segment][y][x]
                         piece_polygon = Polygon(self.polygons[segment][y][x])
                         piece_pixel_pos = piece_polygon.centroid.coords[:][0]
-                        piece_alive = True if piece_id[0] in self.turns else False
+                        if self.stalemated_players == piece_id[0] or self.checkmated_players == piece_id[0]:
+                            piece_alive = False
+                        else:
+                            piece_alive = True
                         new_pieces.append(Piece(piece_id[0], Position(
                             segment, (x, y)), piece_pixel_pos, piece_id[1], piece_alive))
         self.pieces = new_pieces
@@ -103,6 +110,35 @@ class Board:
         queenside_rook_square = self.index_position(Position(move.start.segment, (0, 3)))
         if queenside_rook_square is None or queenside_rook_square != f'{piece_colour}r':
             self.castling_rights[piece_colour]['queenside'] = False
+
+    def update_after_move(self, move, move_table):
+        self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
+        if move.move_type == "double push":
+            self.enpassant_squares[self.selected_piece.colour] = \
+                Position(move.end.segment, (move.end.square.x, move.end.square.y + 1))
+        self.selected_piece.moves = []
+        self.selected_piece = None
+        for turn in self.turns:
+            if get_game_state(self, turn) == "checkmate":
+                self.checkmated_players = turn
+            elif get_game_state(self, turn) == "stalemate":
+                self.stalemated_players = turn
+        self.refresh_pieces()
+        self.turn_index = (self.turn_index + 1) % len(self.turns)
+        self.turn = self.turns[self.turn_index]
+
+        if self.stalemated_players == self.turn:  # If the next turn is a stalemated player
+            if get_game_state(self, self.turn) == "stalemate":  # Check if still in stalemate
+                move_table.add_move(self, None, self.turn)
+                self.turn_index = (self.turn_index + 1) % len(self.turns)
+                self.turn = self.turns[self.turn_index]
+            else:
+                self.stalemated_players = None
+                self.refresh_pieces()
+        if self.checkmated_players == self.turn:  # If the next turn is a checkmated player
+            move_table.add_move(self, None, self.turn)  # Skip the turn
+            self.turn_index = (self.turn_index + 1) % len(self.turns)
+            self.turn = self.turns[self.turn_index]
 
     def handle_mouse_events(self, mouse_position, left_click, move_table):
         if self.selected_piece is not None and not self.in_promotion_selector:
@@ -124,18 +160,7 @@ class Board:
                         if not move.is_promotion:
                             move_table.add_move(self, move, self.selected_piece.colour)
                             self.position = make_move(self, move).position  # Make the move on the board
-                            self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
-                            if move.move_type == "double push":
-                                self.enpassant_squares[self.selected_piece.colour] = \
-                                    Position(move.end.segment, (move.end.square.x, move.end.square.y + 1))
-                            self.selected_piece.moves = []
-                            self.selected_piece = None
-                            for turn in self.turns:
-                                if in_checkmate(self, turn):
-                                    self.turns.remove(turn)
-                            self.refresh_pieces()
-                            self.turn_index = (self.turn_index + 1) % len(self.turns)
-                            self.turn = self.turns[self.turn_index]
+                            self.update_after_move(move, move_table)
                         else:
                             self.in_promotion_selector = True
                             self.promotion_move = move
@@ -148,8 +173,17 @@ class Board:
         if self.in_promotion_selector:
             self.promotion_selector_surface.fill((0, 0, 0, 50))
             for i in range(4):  # Loop through the four y values from the promotion square in the segment
-                selection_polygon_points = self.polygons[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y - i)][
-                    int(self.promotion_move.end.square.x)]
+                selection_polygon_points = None
+                if self.promotion_move.end.square.y == 3:
+                    selection_polygon_points = self.polygons[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y - i)][
+                        int(self.promotion_move.end.square.x)]
+                else:
+                    if self.promotion_move.end.square.x == 7:
+                        selection_polygon_points = self.polygons[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
+                            int(self.promotion_move.end.square.x - i)]
+                    elif self.promotion_move.end.square.x == 0:
+                        selection_polygon_points = self.polygons[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
+                            int(self.promotion_move.end.square.x + i)]
                 pygame.draw.polygon(self.promotion_selector_surface, (0, 0, 0), selection_polygon_points)
                 selection_polygon = Polygon(selection_polygon_points)
                 selection_polygon_centre = selection_polygon.centroid.coords[:][0]
@@ -167,21 +201,13 @@ class Board:
                         self.position = make_move(self, self.promotion_move).position  # Make the move on the board
                         self.position[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
                             int(self.promotion_move.end.square.x)] = self.selected_piece.colour + self.promotion_move.promo_type
-                        self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
-                        self.selected_piece.moves = []
-                        self.selected_piece = None
-                        for turn in self.turns:
-                            if in_checkmate(self, turn):
-                                self.turns.remove(turn)
-                        self.refresh_pieces()
-                        self.turn_index = (self.turn_index + 1) % len(self.turns)
-                        self.turn = self.turns[self.turn_index]
+                        self.update_after_move(self.promotion_move, move_table)
                         self.in_promotion_selector = False
                         break
 
         for piece in self.pieces:
             if piece.rect.collidepoint(mouse_position) and not self.in_promotion_selector:
-                if not piece.highlighted:
+                if not piece.highlighted and piece.colour == self.turn:
                     piece.image = pygame.transform.smoothscale(piece.image, (60, 60))
                     piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True

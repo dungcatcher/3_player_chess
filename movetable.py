@@ -139,4 +139,3 @@ class MoveTable:
                 ply_text_surface, ply_text_rect = move_font.render(ply[0], (255, 255, 255))
                 ply_text_rect.center = ply_container_rect.center
                 surface.blit(ply_text_surface, ply_text_rect)
-

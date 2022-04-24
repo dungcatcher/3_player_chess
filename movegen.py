@@ -211,8 +211,10 @@ def pawn_movegen(board, position, colour, only_captures=False, filter_legal=True
                         square_occupant = board.position[int(position_to_check.segment)][int(
                             position_to_check.square.y)][int(position_to_check.square.x)]
                         if square_occupant is None:
-                            if vector[1] == -2:
-                                pseudo_moves.append(Move(position, position_to_check, move_type="double push"))
+                            if vector[1] == -2:  # Double pawn pushes
+                                #  Check the square in front
+                                if board.position[int(position_to_check.segment)][int(position_to_check.square.y + 1)][int(position_to_check.square.x)] is None:
+                                    pseudo_moves.append(Move(position, position_to_check, move_type="double push"))
                             #  Promotions
                             elif check_promotion(position_to_check, colour):
                                 pseudo_moves.append(Move(position, position_to_check, is_promotion=True))

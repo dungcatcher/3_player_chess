@@ -2,7 +2,7 @@
 
 import pygame
 from config import WIDTH, HEIGHT
-from polygons import compute_polygons, handle_polygon_resize
+from polygons import compute_polygons, handle_polygon_resize, draw_thick_aapolygon
 from movegen import piece_movegen, get_game_state, make_move
 from shapely.geometry import Polygon, Point
 from pieces import Piece
@@ -111,6 +111,10 @@ class Board:
         if queenside_rook_square is None or queenside_rook_square != f'{piece_colour}r':
             self.castling_rights[piece_colour]['queenside'] = False
 
+    def check_winner(self):
+        if len(self.checkmated_players) == 2:
+            print(f'{self.turn} wins')
+
     def update_after_move(self, move, move_table):
         self.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
         if move.move_type == "double push":
@@ -124,6 +128,7 @@ class Board:
                     self.checkmated_players.append(turn)
                 elif get_game_state(self, turn) == "stalemate":
                     self.stalemated_players.append(turn)
+        self.check_winner()
         self.refresh_pieces()
         self.turn_index = (self.turn_index + 1) % len(self.turns)
         self.turn = self.turns[self.turn_index]
@@ -154,7 +159,8 @@ class Board:
 
                 point = Point(mouse_position)
                 if point.within(move_polygon):
-                    pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
+                    # pygame.draw.polygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
+                    draw_thick_aapolygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=3)
 
                     if left_click:
                         self.update_castling_rights(move)

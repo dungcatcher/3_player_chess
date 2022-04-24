@@ -33,8 +33,8 @@ class Board:
             [  # Black segment
                 [None, None, None, None, None, None, None, None],
                 [None, None, None, None, None, None, None, None],
-                [None, None, None, None, None, "wq", None, None],
-                [None, None, None, None, None, None, None, "bk"]
+                ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+                ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"]
             ],
             [  # Red segment
                 [None, None, None, None, None, None, None, None],
@@ -55,8 +55,8 @@ class Board:
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
-        self.stalemated_players = None
-        self.checkmated_players = None
+        self.stalemated_players = []
+        self.checkmated_players = []
         self.selected_piece = None
         self.castling_rights = {
             'w': {'kingside': True, 'queenside': True},
@@ -89,7 +89,7 @@ class Board:
                         piece_id = self.position[segment][y][x]
                         piece_polygon = Polygon(self.polygons[segment][y][x])
                         piece_pixel_pos = piece_polygon.centroid.coords[:][0]
-                        if self.stalemated_players == piece_id[0] or self.checkmated_players == piece_id[0]:
+                        if piece_id[0] in self.stalemated_players or piece_id[0] in self.checkmated_players:
                             piece_alive = False
                         else:
                             piece_alive = True
@@ -119,23 +119,24 @@ class Board:
         self.selected_piece.moves = []
         self.selected_piece = None
         for turn in self.turns:
-            if get_game_state(self, turn) == "checkmate":
-                self.checkmated_players = turn
-            elif get_game_state(self, turn) == "stalemate":
-                self.stalemated_players = turn
+            if turn not in self.checkmated_players:
+                if get_game_state(self, turn) == "checkmate":
+                    self.checkmated_players.append(turn)
+                elif get_game_state(self, turn) == "stalemate":
+                    self.stalemated_players.append(turn)
         self.refresh_pieces()
         self.turn_index = (self.turn_index + 1) % len(self.turns)
         self.turn = self.turns[self.turn_index]
 
-        if self.stalemated_players == self.turn:  # If the next turn is a stalemated player
+        if self.turn in self.stalemated_players and not self.turn in self.checkmated_players:  # If the next turn is a stalemated player
             if get_game_state(self, self.turn) == "stalemate":  # Check if still in stalemate
                 move_table.add_move(self, None, self.turn)
                 self.turn_index = (self.turn_index + 1) % len(self.turns)
                 self.turn = self.turns[self.turn_index]
             else:
-                self.stalemated_players = None
+                self.stalemated_players.remove(self.turn)
                 self.refresh_pieces()
-        if self.checkmated_players == self.turn:  # If the next turn is a checkmated player
+        if self.turn in self.checkmated_players:  # If the next turn is a checkmated player
             move_table.add_move(self, None, self.turn)  # Skip the turn
             self.turn_index = (self.turn_index + 1) % len(self.turns)
             self.turn = self.turns[self.turn_index]

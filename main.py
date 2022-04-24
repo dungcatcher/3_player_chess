@@ -3,6 +3,7 @@ import pygame.freetype
 from config import WIDTH, HEIGHT
 from board import Board
 from movetable import MoveTable
+from pieces import load_piece_images
 
 pygame.init()
 pygame.display.init()
@@ -13,6 +14,7 @@ clock = pygame.time.Clock()
 
 
 def main():
+    load_piece_images()
     board = Board()
     board.refresh_pieces()
     move_table = MoveTable((WIDTH, HEIGHT))

@@ -91,7 +91,7 @@ def move_to_notation(board, move):
 
         new_position = make_move(board, move)
         for turn in board.turns:
-            if turn != piece_colour:
+            if turn != piece_colour and turn not in board.checkmated_players:
                 if get_game_state(new_position, turn) == "checkmate":
                     notation += '#'
                 elif in_check(new_position, turn):  # Check if the resulting position is in check

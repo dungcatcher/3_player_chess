@@ -99,42 +99,48 @@ def in_check(board, colour):
     for move in pawn_movegen(board, king_pos, colour, only_captures=True, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "p":
+            if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
+                    move_piece[0] not in board.stalemated_players and move_piece[1] == "p":
                 return True
 
     # Knight check
     for move in knight_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "n":
+            if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
+                    move_piece[0] not in board.stalemated_players and move_piece[1] == "n":
                 return True
 
     # Bishop check
     for move in bishop_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "b":
+            if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
+                    move_piece[0] not in board.stalemated_players and move_piece[1] == "b":
                 return True
 
     # Rook check
     for move in rook_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "r":
+            if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
+                    move_piece[0] not in board.stalemated_players and move_piece[1] == "r":
                 return True
 
     # Queen check
     for move in queen_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "q":
+            if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
+                    move_piece[0] not in board.stalemated_players and move_piece[1] == "q":
                 return True
 
     # King check
     for move in king_movegen(board, king_pos, colour, filter_legal=False):
         move_piece = board.position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)]
         if move_piece is not None:
-            if move_piece[0] != colour and move_piece[0] in board.turns and move_piece[1] == "k":
+            if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
+                    move_piece[0] not in board.stalemated_players and move_piece[1] == "k":
                 return True
 
     return False

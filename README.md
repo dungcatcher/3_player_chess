@@ -10,3 +10,10 @@ My implementation of three-man chess with some alterations https://en.wikipedia.
 - When there are still three players left, a stalemate still counts as a checkmate. If there are two players, then the game is a draw between the two remaining players.
 - Pawns promote on either of the opponents' back ranks, or the furthest rank directly opposite the player.
 - The diagonals are split in the centre along the two same coloured squares of the diagonal.
+
+## Installation:
+- Click on the green 'Code' button and click download as zip.
+- Save and extract the zip to any location on your computer.
+- Open command prompt and move to the directory you extracted the folder to using ```cd {directory}```
+- Make sure you have python 3 and pip installed and type ```pip install shapely``` to install the required package.
+- Now you can run the file using ```python3 main.py```

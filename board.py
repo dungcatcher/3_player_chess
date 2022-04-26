@@ -7,6 +7,7 @@ from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
 
+
 letter_to_colour = {
     'w': 'white',
     'b': 'black',
@@ -272,7 +273,6 @@ class RenderBoard:
 
         if self.in_result_screen:
             self.result_surface.fill((0, 0, 0, 50))
-
 
     def render(self, surface):
         pygame.draw.rect(surface, (70, 70, 80), self.outline_rect)

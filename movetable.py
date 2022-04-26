@@ -60,7 +60,6 @@ def move_to_notation(board, move):
                                 for same_piece_move in piece_movegen(board, Position(segment, (x, y)), piece_colour):
                                     if positions_are_same(same_piece_move.end, move.end):
                                         same_piece_start_square = COORDINATE_TABLE[segment][y][x]
-                                        print(f'Original: {piece_start_square}, Same: {same_piece_start_square}')
                                         if piece_start_square[0] != same_piece_start_square[0]:
                                             specify_file = True
                                         elif piece_start_square[1] != same_piece_start_square[1]:

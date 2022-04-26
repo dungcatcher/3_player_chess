@@ -1,6 +1,6 @@
 import pygame
 import pygame.freetype
-from board import Board, RenderBoard
+from board import RenderBoard
 from movetable import MoveTable
 from pieces import load_piece_images
 

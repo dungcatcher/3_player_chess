@@ -7,6 +7,12 @@ from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
 
+letter_to_colour = {
+    'w': 'white',
+    'b': 'black',
+    'r': 'red'
+}
+
 
 def resize_board(img, section_size, position):
     scale = section_size[0] * 0.95 / img.get_width()
@@ -45,6 +51,7 @@ class Board:
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
+        self.winner = None
         self.stalemated_players = []
         self.checkmated_players = []
         self.castling_rights = {
@@ -75,7 +82,8 @@ class Board:
 
     def check_winner(self):
         if len(self.checkmated_players) == 2:
-            print(f'{self.turn} wins')
+            self.winner = self.turn
+            print(self.winner)
 
 
 class RenderBoard:
@@ -89,9 +97,12 @@ class RenderBoard:
         self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
         self.move_polygon_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
         self.move_indicator_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
+        self.result_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
+        self.result_rect = pygame.Rect(0, 0, self.outline_rect.width * 0.4, self.outline_rect.width * 0.6)
+        self.result_rect.center = self.outline_rect.center
 
         self.promotion_selector_surface = pygame.Surface(self.outline_rect.size, pygame.SRCALPHA)
-        self.in_promotion_selector = False
+        self.playing, self.in_promotion_selector, self.in_result_screen = True, False, False
         self.promotion_selection_list = ['q', 'r', 'b', 'n']
         self.promotion_selection_images = {
             'w': [], 'b': [], 'r': []
@@ -116,20 +127,23 @@ class RenderBoard:
                 elif get_game_state(self.board, turn) == "stalemate":
                     self.board.stalemated_players.append(turn)
         self.board.check_winner()
+        if self.board.winner is not None:
+            self.in_result_screen = True
+            move_table.result = f'{letter_to_colour[self.board.winner].capitalize()} wins'
         self.refresh_pieces()
         self.board.turn_index = (self.board.turn_index + 1) % len(self.board.turns)
         self.board.turn = self.board.turns[self.board.turn_index]
 
         if self.board.turn in self.board.stalemated_players and not self.board.turn in self.board.checkmated_players:  # If the next turn is a stalemated player
             if get_game_state(self, self.board.turn) == "stalemate":  # Check if still in stalemate
-                move_table.add_move(self, None, self.board.turn)
+                move_table.add_move(self, None)
                 self.board.turn_index = (self.board.turn_index + 1) % len(self.board.turns)
                 self.board.turn = self.board.turns[self.board.turn_index]
             else:
                 self.board.stalemated_players.remove(self.board.turn)
                 self.refresh_pieces()
         if self.board.turn in self.board.checkmated_players:  # If the next turn is a checkmated player
-            move_table.add_move(self, None, self.board.turn)  # Skip the turn
+            move_table.add_move(self.board, None)  # Skip the turn
             self.board.turn_index = (self.board.turn_index + 1) % len(self.board.turns)
             self.board.turn = self.board.turns[self.board.turn_index]
 
@@ -151,7 +165,7 @@ class RenderBoard:
         self.pieces = new_pieces
 
     def handle_mouse_events(self, mouse_position, left_click, move_table):
-        if self.selected_piece is not None and not self.in_promotion_selector:
+        if self.selected_piece is not None and self.playing:
             self.move_indicator_surface.fill((0, 0, 0, 0))
             self.move_polygon_surface.fill((0, 0, 0, 0))  # Fill transparent
             for move in self.selected_piece.moves:
@@ -168,10 +182,11 @@ class RenderBoard:
                     if left_click:
                         self.board.update_castling_rights(move)
                         if not move.is_promotion:
-                            move_table.add_move(self.board, move, self.selected_piece.colour)
+                            move_table.add_move(self.board, move)
                             self.board.position = make_move(self.board, move).position  # Make the move on the board
                             self.update_after_move(move, move_table)
                         else:
+                            self.playing = False
                             self.in_promotion_selector = True
                             self.promotion_move = move
                             left_click = False
@@ -210,16 +225,17 @@ class RenderBoard:
                     draw_thick_aapolygon(self.promotion_selector_surface, (255, 255, 255), selection_polygon_points, 3)
                     if left_click:
                         self.promotion_move.promo_type = self.promotion_selection_list[i]
-                        move_table.add_move(self.board, self.promotion_move, self.selected_piece.colour)
+                        move_table.add_move(self.board, self.promotion_move)
                         self.board.position = make_move(self.board, self.promotion_move).position  # Make the move on the board
                         self.board.position[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
                             int(self.promotion_move.end.square.x)] = self.selected_piece.colour + self.promotion_move.promo_type
                         self.update_after_move(self.promotion_move, move_table)
                         self.in_promotion_selector = False
+                        self.playing = True
                         break
 
         for piece in self.pieces:
-            if piece.rect.collidepoint(mouse_position) and not self.in_promotion_selector:
+            if piece.rect.collidepoint(mouse_position) and self.playing:
                 if not piece.highlighted and piece.colour == self.board.turn:
                     piece.image = pygame.transform.smoothscale(piece.image, (60, 60))
                     piece.rect = piece.image.get_rect(center=piece.pixel_pos)
@@ -232,6 +248,10 @@ class RenderBoard:
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                 piece.highlighted = False
 
+        if self.in_result_screen:
+            self.result_surface.fill((0, 0, 0, 50))
+
+
     def render(self, surface):
         pygame.draw.rect(surface, (70, 70, 80), self.outline_rect)
         surface.blit(self.image, self.rect)
@@ -241,4 +261,7 @@ class RenderBoard:
         surface.blit(self.move_polygon_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
         surface.blit(self.move_indicator_surface, (0, 0))
         if self.in_promotion_selector:
-            surface.blit(self.promotion_selector_surface, self.outline_rect.topleft)
+            surface.blit(self.promotion_selector_surface, self.outline_rect)
+        if self.in_result_screen:
+            surface.blit(self.result_surface, self.outline_rect)
+            pygame.draw.rect(surface, (255, 255, 255), self.result_rect, border_radius=5)

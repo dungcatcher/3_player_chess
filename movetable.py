@@ -29,12 +29,6 @@ COORDINATE_TABLE = [
 title_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 20)
 move_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 14)
 
-colour_to_offset = {  # Calculates which column to put the turn based on the colour
-    'w': 0,
-    'b': 1,
-    'r': 2
-}
-
 
 def move_to_notation(board, move):
     if move is None:
@@ -106,16 +100,17 @@ class MoveTable:
         self.move_table_surface = pygame.Surface((self.outline_rect.width * 0.7, self.outline_rect.height * 0.7))
         self.move_table_rect = self.move_table_surface.get_rect(topleft=(self.outline_rect.left + self.outline_rect.width * 0.15, self.outline_rect.height * 0.15))
         self.moves = [[]]  # [ [ply, ply, ply], ... ]
+        self.result = None
         self.move = 0
 
-    def add_move(self, board, move, colour):
+    def add_move(self, board, move):
         move_notation = move_to_notation(board, move)
         if len(self.moves[self.move]) <= len(board.turns) - 1:
-            self.moves[self.move].append([move_notation, colour])
+            self.moves[self.move].append(move_notation)
         else:
             self.move += 1
             self.moves.append([])
-            self.moves[self.move].append([move_notation, colour])
+            self.moves[self.move].append(move_notation)
 
     def render(self, surface):
         pygame.draw.rect(surface, (40, 40, 40), self.outline_rect)
@@ -133,9 +128,17 @@ class MoveTable:
             surface.blit(move_num_surface, move_num_rect)
             pygame.draw.line(surface, (100, 100, 100), move_num_container_rect.topright, move_num_container_rect.bottomright)
 
-            for ply in move:
-                ply_container_rect = pygame.Rect(move_num_container_rect.right + self.move_table_rect.width * 0.3 * colour_to_offset[ply[1]], move_num_container_rect.top,
+            for j, ply in enumerate(move):
+                ply_container_rect = pygame.Rect(move_num_container_rect.right + self.move_table_rect.width * 0.3 * j, move_num_container_rect.top,
                         self.move_table_rect.width * 0.3, move_num_container_rect.height)
-                ply_text_surface, ply_text_rect = move_font.render(ply[0], (255, 255, 255))
+                ply_text_surface, ply_text_rect = move_font.render(ply, (255, 255, 255))
                 ply_text_rect.center = ply_container_rect.center
                 surface.blit(ply_text_surface, ply_text_rect)
+
+        if self.result is not None:
+            result_rect = pygame.Rect(self.move_table_rect.left + self.move_table_rect.width * 0.1,
+                                      self.move_table_rect.top + len(self.moves) * self.move_table_rect.height * 0.07,
+                                      self.move_table_rect.width * 0.9, self.move_table_rect.height * 0.07)
+            result_text_surface, result_text_rect = move_font.render(self.result, (255, 255, 255))
+            result_text_rect.center = result_rect.center
+            surface.blit(result_text_surface, result_text_rect)

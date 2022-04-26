@@ -1,8 +1,9 @@
 import pygame
 import pygame.freetype
-from board import RenderBoard
+from board import RenderBoard, test_fastest_checkmate
 from movetable import MoveTable
 from pieces import load_piece_images
+import time
 
 pygame.init()
 pygame.display.init()
@@ -16,6 +17,10 @@ clock = pygame.time.Clock()
 def main():
     load_piece_images()
     render_board = RenderBoard((WIDTH, HEIGHT))
+    start = time.time()
+    print(test_fastest_checkmate(render_board.board, 3))
+    print(f'{time.time() - start} seconds')
+
     render_board.refresh_pieces()
     move_table = MoveTable((WIDTH, HEIGHT))
 

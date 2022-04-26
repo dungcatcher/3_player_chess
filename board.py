@@ -14,6 +14,28 @@ letter_to_colour = {
 }
 
 
+def test_fastest_checkmate(board, depth):
+    moves = 0
+    turn_legal_moves = []
+    for segment in range(3):
+        for y in range(4):
+            for x in range(8):
+                square_occupant = board.position[segment][y][x]
+                if square_occupant is not None and square_occupant[0] == board.turn:
+                    turn_legal_moves += piece_movegen(board, Position(segment, (x, y)), square_occupant[0])
+
+    if depth == 0:
+        return len(turn_legal_moves)
+
+    for move in turn_legal_moves:
+        new_board = make_move(board, move)
+        new_board.turn_index = (new_board.turn_index + 1) % len(new_board.turns)
+        new_board.turn = new_board.turns[new_board.turn_index]
+        moves += test_fastest_checkmate(new_board, depth - 1)
+
+    return moves
+
+
 def resize_board(img, section_size, position):
     scale = section_size[0] * 0.95 / img.get_width()
     img = pygame.transform.smoothscale(img, (img.get_width() * scale, img.get_height() * scale))

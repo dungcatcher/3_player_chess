@@ -1,6 +1,5 @@
 import pygame
 import pygame.freetype
-from config import WIDTH, HEIGHT
 from board import Board, RenderBoard
 from movetable import MoveTable
 from pieces import load_piece_images
@@ -9,13 +8,14 @@ pygame.init()
 pygame.display.init()
 pygame.display.set_caption("3 player chess")
 
-WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
+WIDTH, HEIGHT = 1000, 700
+WINDOW = pygame.display.set_mode((1000, 700))
 clock = pygame.time.Clock()
 
 
 def main():
     load_piece_images()
-    render_board = RenderBoard(Board())
+    render_board = RenderBoard((WIDTH, HEIGHT))
     render_board.refresh_pieces()
     move_table = MoveTable((WIDTH, HEIGHT))
 

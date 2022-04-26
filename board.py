@@ -1,7 +1,6 @@
 """TODO: Clean up handle mouse event code"""
 
 import pygame
-from config import WIDTH, HEIGHT
 from polygons import compute_polygons, handle_polygon_resize, draw_thick_aapolygon
 from movegen import piece_movegen, get_game_state, make_move
 from shapely.geometry import Polygon, Point
@@ -31,7 +30,7 @@ class Board:
                 ["wr", "wn", "wb", 'wq', "wk", "wb", "wn", "wr"]
             ],
             [  # Black segment
-                [None, None, None, None, None, None, "wp", None],
+                [None, None, None, None, None, None, None, None],
                 [None, None, None, None, None, None, None, None],
                 ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
                 ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"]
@@ -43,21 +42,11 @@ class Board:
                 ["rr", "rn", "rb", "rq", "rk", "rb", "rn", "rr"]
             ]
         ]
-        self.outline_rect = pygame.Rect(0, 0, WIDTH * 0.7, HEIGHT)
-        self.image, self.rect, self.scale = resize_board(
-            pygame.image.load('./Assets/board.png'), self.outline_rect.size, self.outline_rect.center)
-        self.polygons = compute_polygons()
-        self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
-        self.move_polygon_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        self.move_indicator_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        self.promotion_selector_surface = pygame.Surface(self.outline_rect.size, pygame.SRCALPHA)
-        self.pieces = []
         self.turns = ["w", "b", "r"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
         self.stalemated_players = []
         self.checkmated_players = []
-        self.selected_piece = None
         self.castling_rights = {
             'w': {'kingside': True, 'queenside': True},
             'b': {'kingside': True, 'queenside': True},
@@ -66,16 +55,6 @@ class Board:
         self.enpassant_squares = {  # Squares that can be taken en passant
             'w': None, 'b': None, 'r': None
         }
-        self.in_promotion_selector = False
-        self.promotion_selection_list = ['q', 'r', 'b', 'n']
-        self.promotion_selection_images = {
-            'w': [], 'b': [], 'r': []
-        }
-        self.promotion_move = None  #  Stores the move if a promotion happens
-        for colour in self.turns:  # Load images for promotion selection
-            for piece in self.promotion_selection_list:
-                image = pygame.image.load(f'./Assets/pieces/{colour}{piece}.png')
-                self.promotion_selection_images[colour].append(image)
 
     def index_position(self, position):  # Helper function to prevent long indexing code
         return self.position[int(position.segment)][int(position.square.y)][int(position.square.x)]
@@ -100,16 +79,16 @@ class Board:
 
 
 class RenderBoard:
-    def __init__(self, board):
-        self.board = board
-        self.outline_rect = pygame.Rect(0, 0, WIDTH * 0.7, HEIGHT)
+    def __init__(self, screen_size):
+        self.board = Board()
+        self.outline_rect = pygame.Rect(0, 0, screen_size[0] * 0.7, screen_size[1])
         self.image, self.rect, self.scale = resize_board(
             pygame.image.load('./Assets/board.png'), self.outline_rect.size, self.outline_rect.center)
         self.selected_piece = None
         self.polygons = compute_polygons()
         self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
-        self.move_polygon_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        self.move_indicator_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        self.move_polygon_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
+        self.move_indicator_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
 
         self.promotion_selector_surface = pygame.Surface(self.outline_rect.size, pygame.SRCALPHA)
         self.in_promotion_selector = False

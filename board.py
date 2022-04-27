@@ -6,6 +6,7 @@ from movegen import piece_movegen, get_game_state, make_move
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
+import time
 
 
 letter_to_colour = {
@@ -71,7 +72,7 @@ class Board:
                 ["rr", "rn", "rb", "rq", "rk", "rb", "rn", "rr"]
             ]
         ]
-        self.turns = ["w", "b", "r"]
+        self.turns = ["w", "r", "b"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
         self.winner = None
@@ -145,9 +146,10 @@ class RenderBoard:
         self.selected_piece = None
         for turn in self.board.turns:
             if turn not in self.board.checkmated_players:
-                if get_game_state(self.board, turn) == "checkmate":
+                game_state = get_game_state(self.board, turn)
+                if game_state == "checkmate":
                     self.board.checkmated_players.append(turn)
-                elif get_game_state(self.board, turn) == "stalemate":
+                elif game_state == "stalemate":
                     self.board.stalemated_players.append(turn)
         self.board.check_winner()
         if self.board.winner is not None:
@@ -205,9 +207,11 @@ class RenderBoard:
                     if left_click:
                         self.board.update_castling_rights(move)
                         if not move.is_promotion:
+                            start = time.time()
                             move_table.add_move(self.board, move)
                             self.board.position = make_move(self.board, move).position  # Make the move on the board
                             self.update_after_move(move, move_table)
+                            print(f'{time.time() - start} seconds')
                         else:
                             self.playing = False
                             self.in_promotion_selector = True
@@ -273,6 +277,9 @@ class RenderBoard:
 
         if self.in_result_screen:
             self.result_surface.fill((0, 0, 0, 50))
+
+    def rotate(self, angle):
+        pass
 
     def render(self, surface):
         pygame.draw.rect(surface, (70, 70, 80), self.outline_rect)

@@ -156,6 +156,7 @@ def get_game_state(board, colour):  # Checks for checkmate, stalemate or still p
                 if square_occupant is not None and square_occupant[0] == colour:
                     if piece_movegen(board, Position(segment, (x, y)), colour):
                         legal_move_found = True
+                        break
 
     if not legal_move_found:
         if in_check(board, colour):

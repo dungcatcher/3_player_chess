@@ -18,7 +18,7 @@ def main():
     load_piece_images()
     render_board = RenderBoard((WIDTH, HEIGHT))
     # start = time.time()
-    # print(test_fastest_checkmate(render_board.board, 3))
+    # print(test_fastest_checkmate(render_board.board, 2))
     # print(f'{time.time() - start} seconds')
 
     render_board.refresh_pieces()

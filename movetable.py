@@ -2,6 +2,7 @@ import pygame
 import pygame.freetype
 from movegen import in_check, get_game_state, make_move, piece_movegen, positions_are_same
 from classes import Position
+import time
 
 pygame.freetype.init()
 

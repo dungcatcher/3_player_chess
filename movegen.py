@@ -167,7 +167,6 @@ def get_game_state(board, colour):  # Checks for checkmate, stalemate or still p
                         break
 
     checkers = get_checkers(board, colour)
-    print(checkers)
     if not legal_move_found:
         if checkers:
             return "checkmate"

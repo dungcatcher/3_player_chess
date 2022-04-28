@@ -22,10 +22,12 @@ def load_piece_images():
 
 
 class Piece:
-    def __init__(self, colour, position, pixel_pos, identifier, alive=True):
+    def __init__(self, colour, position, pixel_pos, hover_pos, identifier, alive=True):
         self.colour = colour
         self.position = position  # Board position
-        self.pixel_pos = pixel_pos
+        self.original_pixel_pos = pixel_pos
+        self.pixel_pos = self.original_pixel_pos
+        self.hover_pos = hover_pos
         if alive:
             self.image = piece_image_map[colour][identifier]
         else:

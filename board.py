@@ -262,7 +262,7 @@ class RenderBoard:
 
         for piece in self.pieces:
             if piece.rect.collidepoint(mouse_position) and self.playing:
-                if not piece.highlighted and piece.colour == self.board.turn:
+                if not piece.highlighted and piece.colour == self.board.turn and piece != self.selected_piece:
                     old_rect = piece.image.get_rect(center=piece.pixel_pos)  # Before moving
                     piece.pixel_pos = piece.hover_pos  # Move up
                     updated_rect = piece.image.get_rect(center=piece.pixel_pos)  # After moving
@@ -272,6 +272,9 @@ class RenderBoard:
                     piece.rect = new_rect
                     piece.highlighted = True
                 if piece.colour == self.board.turn and left_click:
+                    piece.pixel_pos = piece.original_pixel_pos
+                    piece.rect = piece.image.get_rect(center=piece.pixel_pos)
+                    piece.highlighted = False
                     self.selected_piece = piece
                     self.selected_piece.moves = piece_movegen(self.board, piece.position, piece.colour)
             else:

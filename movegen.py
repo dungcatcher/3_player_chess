@@ -166,13 +166,19 @@ def get_game_state(board, colour):  # Checks for checkmate, stalemate or still p
                         legal_move_found = True
                         break
 
+    checkers = get_checkers(board, colour)
+    print(checkers)
     if not legal_move_found:
-        if get_checkers(board, colour):
+        if checkers:
             return "checkmate"
         else:
             return "stalemate"
     else:
-        return "playing"
+        # If the next turn can take your king
+        if colour != board.turn and board.turns[(board.turn_index + 1) % 3] in checkers:
+            return "checkmate"
+        else:
+            return "playing"
 
 
 def legal_movegen(board, moves, colour):

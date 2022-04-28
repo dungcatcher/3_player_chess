@@ -1,6 +1,6 @@
 import pygame
 import pygame.freetype
-from movegen import in_check, get_game_state, make_move, piece_movegen, positions_are_same
+from movegen import get_checkers, get_game_state, make_move, piece_movegen, positions_are_same
 from classes import Position
 import time
 
@@ -83,12 +83,12 @@ def move_to_notation(board, move):
         if move.is_promotion:
             notation += f'={move.promo_type.upper()}'
 
-        new_position = make_move(board, move)
+        new_board = make_move(board, move)
         for turn in board.turns:
             if turn != piece_colour and turn not in board.checkmated_players:
-                if get_game_state(new_position, turn) == "checkmate":
+                if get_game_state(new_board, turn) == "checkmate":
                     notation += '#'
-                elif in_check(new_position, turn):  # Check if the resulting position is in check
+                elif piece_colour in get_checkers(new_board, turn):  # Check if the resulting position is in check
                     notation += '+'
 
     return notation

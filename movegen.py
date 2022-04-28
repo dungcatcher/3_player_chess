@@ -86,7 +86,9 @@ def vector_to_position(position: Position, vector: List[float]):
         return end_pos
 
 
-def in_check(board, colour):
+def get_checkers(board, colour):  # Check for teams checking a colour's king
+    checkers = []
+
     king_pos = None
     for segment in range(3):
         for y in range(4):
@@ -101,7 +103,8 @@ def in_check(board, colour):
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
                     move_piece[0] not in board.stalemated_players and move_piece[1] == "p":
-                return True
+                if move_piece[0] not in checkers:
+                    checkers.append(move_piece[0])
 
     # Knight check
     for move in knight_movegen(board, king_pos, colour, filter_legal=False):
@@ -109,7 +112,8 @@ def in_check(board, colour):
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
                     move_piece[0] not in board.stalemated_players and move_piece[1] == "n":
-                return True
+                if move_piece[0] not in checkers:
+                    checkers.append(move_piece[0])
 
     # Bishop check
     for move in bishop_movegen(board, king_pos, colour, filter_legal=False):
@@ -117,7 +121,8 @@ def in_check(board, colour):
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
                     move_piece[0] not in board.stalemated_players and move_piece[1] == "b":
-                return True
+                if move_piece[0] not in checkers:
+                    checkers.append(move_piece[0])
 
     # Rook check
     for move in rook_movegen(board, king_pos, colour, filter_legal=False):
@@ -125,7 +130,8 @@ def in_check(board, colour):
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
                     move_piece[0] not in board.stalemated_players and move_piece[1] == "r":
-                return True
+                if move_piece[0] not in checkers:
+                    checkers.append(move_piece[0])
 
     # Queen check
     for move in queen_movegen(board, king_pos, colour, filter_legal=False):
@@ -133,7 +139,8 @@ def in_check(board, colour):
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
                     move_piece[0] not in board.stalemated_players and move_piece[1] == "q":
-                return True
+                if move_piece[0] not in checkers:
+                    checkers.append(move_piece[0])
 
     # King check
     for move in king_movegen(board, king_pos, colour, filter_legal=False):
@@ -141,9 +148,10 @@ def in_check(board, colour):
         if move_piece is not None:
             if move_piece[0] != colour and move_piece[0] not in board.checkmated_players and \
                     move_piece[0] not in board.stalemated_players and move_piece[1] == "k":
-                return True
+                if move_piece[0] not in checkers:
+                    checkers.append(move_piece[0])
 
-    return False
+    return checkers
 
 
 def get_game_state(board, colour):  # Checks for checkmate, stalemate or still playing
@@ -159,7 +167,7 @@ def get_game_state(board, colour):  # Checks for checkmate, stalemate or still p
                         break
 
     if not legal_move_found:
-        if in_check(board, colour):
+        if get_checkers(board, colour):
             return "checkmate"
         else:
             return "stalemate"
@@ -171,7 +179,7 @@ def legal_movegen(board, moves, colour):
     legal_moves = []
     for move in moves:
         new_board = make_move(board, move)
-        if not in_check(new_board, colour):
+        if not get_checkers(new_board, colour):
             legal_moves.append(move)
 
     return legal_moves
@@ -381,13 +389,13 @@ def king_movegen(board, position, colour, filter_legal=True):
                         #  Check castling squares for checks
                         test_move = Move(position, Position(position.segment, (position.square.x + i, position.square.y)))
                         new_board = make_move(board, test_move)
-                        if in_check(new_board, colour):
+                        if get_checkers(new_board, colour):
                             can_kingside_castle = False
                             break
                     else:
                         can_kingside_castle = False
                         break
-                if in_check(board, colour):  # Check if the king is in check
+                if get_checkers(board, colour):  # Check if the king is in check
                     can_kingside_castle = False
                     break
             if can_kingside_castle:
@@ -405,13 +413,13 @@ def king_movegen(board, position, colour, filter_legal=True):
                         if i != 3:  # Don't check square next to rook for checks
                             test_move = Move(position, Position(position.segment, (position.square.x - i, position.square.y)))
                             new_board = make_move(board, test_move)
-                            if in_check(new_board, colour):
+                            if get_checkers(new_board, colour):
                                 can_queenside_castle = False
                                 break
                     else:
                         can_queenside_castle = False
                         break
-                if in_check(board, colour):
+                if get_checkers(board, colour):
                     can_queenside_castle = False
                     break
             if can_queenside_castle:

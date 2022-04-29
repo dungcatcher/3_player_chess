@@ -7,6 +7,28 @@ from movegen import piece_movegen, get_game_state, make_move
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
+from buttons import Button
+
+STARTING_POSITION = [
+    [  # White segment
+        [None, None, None, None, None, None, None, None],
+        [None, None, None, None, None, None, None, None],
+        ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
+        ["wr", "wn", "wb", 'wq', "wk", "wb", "wn", "wr"]
+    ],
+    [  # Black segment
+        [None, None, None, None, None, None, None, None],
+        [None, None, None, None, None, None, None, None],
+        ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
+        ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"]
+    ],
+    [  # Red segment
+        [None, None, None, None, None, None, None, None],
+        [None, None, None, None, None, None, None, None],
+        ["rp", "rp", "rp", "rp", "rp", "rp", "rp", "rp"],
+        ["rr", "rn", "rb", "rq", "rk", "rb", "rn", "rr"]
+    ]
+]
 
 
 letter_to_colour = {
@@ -52,30 +74,11 @@ class Board:
         """
         Board is represented as a list of 2d arrays of the 3 8x4 segments
         """
-        self.position = [
-            [  # White segment
-                [None, None, None, None, None, None, None, None],
-                [None, None, None, None, None, None, None, None],
-                ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-                ["wr", "wn", "wb", 'wq', "wk", "wb", "wn", "wr"]
-            ],
-            [  # Black segment
-                [None, None, None, None, None, None, None, None],
-                [None, None, None, None, None, None, None, None],
-                ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-                ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"]
-            ],
-            [  # Red segment
-                [None, None, None, None, None, None, None, None],
-                [None, None, None, None, None, None, None, None],
-                ["rp", "rp", "rp", "rp", "rp", "rp", "rp", "rp"],
-                ["rr", "rn", "rb", "rq", "rk", "rb", "rn", "rr"]
-            ]
-        ]
+        self.position = STARTING_POSITION
         self.turns = ["w", "r", "b"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
-        self.winner = "w"
+        self.winner = None
         self.stalemated_players = []
         self.checkmated_players = []
         self.castling_rights = {
@@ -172,6 +175,30 @@ class RenderBoard:
             self.board.turn_index = (self.board.turn_index + 1) % len(self.board.turns)
             self.board.turn = self.board.turns[self.board.turn_index]
 
+    def reset_board(self, move_table):
+        #  Reset board logic
+        self.board.position = STARTING_POSITION
+        self.board.turn_index = 0
+        self.board.turn = self.board.turns[self.board.turn_index]
+        self.board.winner = None
+        self.board.stalemated_players = []
+        self.board.checkmated_players = []
+        self.board.castling_rights = {
+            'w': {'kingside': True, 'queenside': True},
+            'b': {'kingside': True, 'queenside': True},
+            'r': {'kingside': True, 'queenside': True}
+        }
+        self.board.enpassant_squares = {  # Squares that can be taken en passant
+            'w': None, 'b': None, 'r': None
+        }
+
+        self.refresh_pieces()
+        self.playing = True
+        self.in_result_screen = False
+        move_table.moves = [[]]
+        move_table.result = None
+        move_table.move = 0
+
     def refresh_pieces(self):
         new_pieces = []
         for segment in range(3):
@@ -260,6 +287,9 @@ class RenderBoard:
                         self.playing = True
                         break
 
+        if self.in_result_screen:
+            self.result_screen.handle_mouse_events(mouse_position, left_click, move_table)
+
         for piece in self.pieces:
             if piece.rect.collidepoint(mouse_position) and self.playing:
                 if not piece.highlighted and piece.colour == self.board.turn and piece != self.selected_piece:
@@ -308,11 +338,19 @@ class ResultScreen:
         self.result_rect.center = render_board.outline_rect.center
         self.result_title_rect = pygame.Rect(self.result_rect.left, self.result_rect.top, self.result_rect.width, self.result_rect.height * 0.15)
         self.title_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.ttf', 36)
+        self.restart_button = Button((255, 255, 255),
+                                     (self.result_rect.centerx, self.result_rect.top + self.result_rect.height * 0.3),
+                                     (self.result_rect.width * 0.6, self.result_rect.height * 0.1),
+                                     'Restart?')
 
     def get_winner_text(self):
         winner_word = letter_to_colour[self.render_board.board.winner]
         winner_text = winner_word.capitalize() + ' wins!'
         return winner_text
+
+    def handle_mouse_events(self, mouse_position, left_click, move_table):
+        if self.restart_button.mouse_over(mouse_position) and left_click:
+            self.render_board.reset_board(move_table)
 
     def render(self, surface):
         self.result_surface.fill((0, 0, 0, 50))
@@ -324,5 +362,4 @@ class ResultScreen:
         result_title_rect.center = self.result_title_rect.center
         surface.blit(result_title_surface, result_title_rect)
 
-
-
+        self.restart_button.render(surface)

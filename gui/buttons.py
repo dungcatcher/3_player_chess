@@ -9,7 +9,7 @@ class Button:
         self.rect = pygame.Rect(0, 0, size[0], size[1])
         self.rect.center = pos
         self.text = text
-        self.font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 16)
+        self.font = pygame.freetype.Font('Assets/BAHNSCHRIFT.TTF', 16)
         self.outline = outline
 
     def mouse_over(self, mouse_position):

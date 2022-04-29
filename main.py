@@ -1,9 +1,8 @@
 import pygame
 import pygame.freetype
-from board import RenderBoard, test_fastest_checkmate
-from movetable import MoveTable
-from pieces import load_piece_images
-import time
+from gui.render_board import RenderBoard
+from gui.move_table import MoveTable
+from gui.pieces import load_piece_images
 
 pygame.init()
 pygame.display.init()

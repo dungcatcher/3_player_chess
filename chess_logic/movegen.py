@@ -1,6 +1,6 @@
 from pygame import Vector2
 from typing import List, Union
-from classes import Move, Position
+from .classes import Move, Position
 from copy import copy, deepcopy
 
 

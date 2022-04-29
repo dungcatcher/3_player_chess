@@ -1,8 +1,7 @@
 import pygame
 import pygame.freetype
-from movegen import get_checkers, get_game_state, make_move, piece_movegen, positions_are_same
-from classes import Position
-import time
+from chess_logic.movegen import get_checkers, get_game_state, make_move, piece_movegen, positions_are_same
+from chess_logic.classes import Position
 
 pygame.freetype.init()
 
@@ -27,8 +26,8 @@ COORDINATE_TABLE = [
     ]
 ]
 
-title_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 20)
-move_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.TTF', 14)
+title_font = pygame.freetype.Font('Assets/BAHNSCHRIFT.TTF', 20)
+move_font = pygame.freetype.Font('Assets/BAHNSCHRIFT.TTF', 14)
 
 
 def move_to_notation(board, move):

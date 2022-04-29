@@ -1,5 +1,5 @@
 import math
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Polygon
 import pygame.gfxdraw
 
 half_segment_polygon = [(335, 1382), (1092, 946), (1092, 1820), (587, 1820)]

@@ -1,12 +1,12 @@
 """TODO: Clean up handle mouse event code"""
 
 import pygame
+import pygame.freetype
 from polygons import compute_polygons, handle_polygon_resize, draw_thick_aapolygon
 from movegen import piece_movegen, get_game_state, make_move
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
-import time
 
 
 letter_to_colour = {
@@ -75,7 +75,7 @@ class Board:
         self.turns = ["w", "r", "b"]
         self.turn_index = 0
         self.turn = self.turns[self.turn_index]
-        self.winner = None
+        self.winner = "w"
         self.stalemated_players = []
         self.checkmated_players = []
         self.castling_rights = {
@@ -94,7 +94,7 @@ class Board:
         piece_colour = self.index_position(move.start)[0]
 
         king_square = self.index_position(Position(move.start.segment, (4, 3)))
-        if king_square is None or king_square != f'{piece_colour}k':  # If the king is not on its start square it has moved
+        if king_square != f'{piece_colour}k':  # If the king is not on its start square it has moved
             self.castling_rights[piece_colour]['queenside'] = False
             self.castling_rights[piece_colour]['kingside'] = False
         kingside_rook_square = self.index_position(Position(move.start.segment, (7, 3)))
@@ -121,12 +121,10 @@ class RenderBoard:
         self.polygons, self.hover_points = handle_polygon_resize([self.polygons, self.hover_points], self.scale, self.rect.topleft)
         self.move_polygon_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
         self.move_indicator_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
-        self.result_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
-        self.result_rect = pygame.Rect(0, 0, self.outline_rect.width * 0.4, self.outline_rect.width * 0.6)
-        self.result_rect.center = self.outline_rect.center
 
         self.promotion_selector_surface = pygame.Surface(self.outline_rect.size, pygame.SRCALPHA)
         self.playing, self.in_promotion_selector, self.in_result_screen = True, False, False
+        self.result_screen = None
         self.promotion_selection_list = ['q', 'r', 'b', 'n']
         self.promotion_selection_images = {
             'w': [], 'b': [], 'r': []
@@ -154,7 +152,9 @@ class RenderBoard:
         self.board.check_winner()
         if self.board.winner is not None:
             self.in_result_screen = True
-            move_table.result = f'{letter_to_colour[self.board.winner].capitalize()} wins'
+            self.playing = False
+            self.result_screen = ResultScreen(self)
+            move_table.result = self.result_screen.get_winner_text()
         self.refresh_pieces()
         self.board.turn_index = (self.board.turn_index + 1) % len(self.board.turns)
         self.board.turn = self.board.turns[self.board.turn_index]
@@ -282,9 +282,6 @@ class RenderBoard:
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                 piece.highlighted = False
 
-        if self.in_result_screen:
-            self.result_surface.fill((0, 0, 0, 50))
-
     def rotate(self, angle):
         pass
 
@@ -299,5 +296,33 @@ class RenderBoard:
         if self.in_promotion_selector:
             surface.blit(self.promotion_selector_surface, self.outline_rect)
         if self.in_result_screen:
-            surface.blit(self.result_surface, self.outline_rect)
-            pygame.draw.rect(surface, (255, 255, 255), self.result_rect, border_radius=5)
+            self.result_screen.render(surface)
+
+
+class ResultScreen:
+    def __init__(self, render_board):
+        self.render_board = render_board
+        self.winner_text = self.get_winner_text()
+        self.result_surface = pygame.Surface(render_board.outline_rect.size, pygame.SRCALPHA)
+        self.result_rect = pygame.Rect(0, 0, render_board.outline_rect.width * 0.4, render_board.outline_rect.width * 0.6)
+        self.result_rect.center = render_board.outline_rect.center
+        self.result_title_rect = pygame.Rect(self.result_rect.left, self.result_rect.top, self.result_rect.width, self.result_rect.height * 0.15)
+        self.title_font = pygame.freetype.Font('./Assets/BAHNSCHRIFT.ttf', 36)
+
+    def get_winner_text(self):
+        winner_word = letter_to_colour[self.render_board.board.winner]
+        winner_text = winner_word.capitalize() + ' wins!'
+        return winner_text
+
+    def render(self, surface):
+        self.result_surface.fill((0, 0, 0, 50))
+        surface.blit(self.result_surface, self.render_board.outline_rect)
+        pygame.draw.rect(surface, (200, 200, 220), self.result_rect, border_radius=5)
+        pygame.draw.rect(surface, (60, 60, 60), self.result_title_rect, border_top_left_radius=5, border_top_right_radius=5)
+
+        result_title_surface, result_title_rect = self.title_font.render(self.winner_text, (255, 255, 255))
+        result_title_rect.center = self.result_title_rect.center
+        surface.blit(result_title_surface, result_title_rect)
+
+
+

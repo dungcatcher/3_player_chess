@@ -17,9 +17,6 @@ clock = pygame.time.Clock()
 def main():
     load_piece_images()
     render_board = RenderBoard((WIDTH, HEIGHT))
-    # start = time.time()
-    # print(test_fastest_checkmate(render_board.board, 2))
-    # print(f'{time.time() - start} seconds')
 
     render_board.refresh_pieces()
     move_table = MoveTable((WIDTH, HEIGHT))
@@ -38,6 +35,7 @@ def main():
         move_table.render(WINDOW)
 
         left_click = False
+        mouse_scroll = 0
 
         title_surface, title_rect = bahnschrift.render("dungcatcher's 3 Player Chess", (255, 255, 255))
         title_rect.center = (render_board.outline_rect.centerx, HEIGHT * 0.05)
@@ -49,6 +47,7 @@ def main():
                 exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 left_click = True
+
 
         pygame.display.update()
 

@@ -120,8 +120,8 @@ class RenderBoard:
         self.image, self.rect, self.scale = resize_board(
             pygame.image.load('./Assets/board.png'), self.outline_rect.size, self.outline_rect.center)
         self.selected_piece = None
-        self.polygons, self.hover_points = compute_polygons()
-        self.polygons, self.hover_points = handle_polygon_resize([self.polygons, self.hover_points], self.scale, self.rect.topleft)
+        self.polygons = compute_polygons()
+        self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
         self.move_polygon_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
         self.move_indicator_surface = pygame.Surface(screen_size, pygame.SRCALPHA)
 
@@ -208,13 +208,12 @@ class RenderBoard:
                         piece_id = self.board.position[segment][y][x]
                         piece_polygon = Polygon(self.polygons[segment][y][x])
                         piece_pixel_pos = piece_polygon.centroid.coords[:][0]
-                        piece_hover_pos = self.hover_points[segment][y][x]
                         if piece_id[0] in self.board.stalemated_players or piece_id[0] in self.board.checkmated_players:
                             piece_alive = False
                         else:
                             piece_alive = True
                         new_pieces.append(Piece(piece_id[0], Position(
-                            segment, (x, y)), piece_pixel_pos, piece_hover_pos, piece_id[1], piece_alive))
+                            segment, (x, y)), piece_pixel_pos, piece_id[1], piece_alive))
         self.pieces = new_pieces
 
     def handle_mouse_events(self, mouse_position, left_click, move_table):
@@ -293,22 +292,15 @@ class RenderBoard:
         for piece in self.pieces:
             if piece.rect.collidepoint(mouse_position) and self.playing:
                 if not piece.highlighted and piece.colour == self.board.turn and piece != self.selected_piece:
-                    old_rect = piece.image.get_rect(center=piece.pixel_pos)  # Before moving
-                    piece.pixel_pos = piece.hover_pos  # Move up
-                    updated_rect = piece.image.get_rect(center=piece.pixel_pos)  # After moving
-                    #  Rect covering both positions and their sizes to prevent glitching
-                    new_rect = pygame.Rect(0, 0, (updated_rect.right - old_rect.left), (old_rect.bottom - updated_rect.top))
-                    new_rect.center = piece.pixel_pos
-                    piece.rect = new_rect
+                    piece.image = pygame.transform.smoothscale(piece.original_image, (60, 60))
+                    piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True
                 if piece.colour == self.board.turn and left_click:
-                    piece.pixel_pos = piece.original_pixel_pos
-                    piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = False
                     self.selected_piece = piece
                     self.selected_piece.moves = piece_movegen(self.board, piece.position, piece.colour)
             else:
-                piece.pixel_pos = piece.original_pixel_pos
+                piece.image = pygame.transform.smoothscale(piece.original_image, (40, 40))
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                 piece.highlighted = False
 

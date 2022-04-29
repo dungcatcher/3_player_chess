@@ -32,7 +32,6 @@ def position_to_pixel(position, board_polygons):
 
 def compute_polygons():
     all_polygons = []
-    hover_points = [[[None for x in range(8)] for y in range(4)] for segment in range(3)]  # Places where pieces move to when hovered over
     for segment in range(3):
         # 8x4 array of polygons for the segment
         segment_polygons = [[[] for x in range(8)] for y in range(4)]
@@ -61,33 +60,23 @@ def compute_polygons():
                             polygon.append(lerp_point)
                     segment_polygons[y][x + 4 * half_segment] = polygon
 
-                    top_midpoint = lerp_vector(polygon[0], polygon[3], 0.5)
-                    bottom_midpoint = lerp_vector(polygon[1], polygon[2], 0.5)
-                    hover_point = lerp_vector(bottom_midpoint, top_midpoint, 0.6)
-
-                    hover_points[segment][y][x + 4 * half_segment] = hover_point
-
         all_polygons.append(segment_polygons)
 
-    return [all_polygons, hover_points]
+    return all_polygons
 
 
-def handle_polygon_resize(polygon_data, new_scale, offset):
+def handle_polygon_resize(polygons, new_scale, offset):
     polygons_copy = [[[None for x in range(8)] for y in range(4)] for s in range(3)]
-    hover_points_copy = [[[None for x in range(8)] for y in range(4)] for s in range(3)]
     for segment in range(3):
         for y in range(4):
             for x in range(8):
                 new_point = []
-                for point in polygon_data[0][segment][y][x]:
+                for point in polygons[segment][y][x]:
                     new_point.append(
                         (point[0] * new_scale + offset[0], point[1] * new_scale + offset[1]))
                 polygons_copy[segment][y][x] = new_point
 
-                hover_point = polygon_data[1][segment][y][x]
-                hover_points_copy[segment][y][x] = (hover_point[0] * new_scale + offset[0], hover_point[1] * new_scale + offset[1])
-
-    return [polygons_copy, hover_points_copy]
+    return polygons_copy
 
 
 # gfxdraw doesn't support thick antialiased shapes

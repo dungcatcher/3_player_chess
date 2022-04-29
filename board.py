@@ -3,7 +3,7 @@
 import pygame
 import pygame.freetype
 from polygons import compute_polygons, handle_polygon_resize, draw_thick_aapolygon
-from movegen import piece_movegen, get_game_state, make_move
+from movegen import piece_movegen, get_game_state, make_move, get_checkers
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
@@ -138,6 +138,30 @@ class RenderBoard:
                 image = pygame.image.load(f'./Assets/pieces/{colour}{piece}.png')
                 self.promotion_selection_images[colour].append(image)
 
+        self.move_sound = pygame.mixer.Sound("./Assets/sfx/move.ogg")
+        self.capture_sound = pygame.mixer.Sound("./Assets/sfx/capture.ogg")
+        self.check_sound = pygame.mixer.Sound("./Assets/sfx/check.ogg")  # heheheha
+
+    def play_sound(self, move):
+        capture = False
+        check = False
+        if self.board.index_position(move.end) is not None:
+            capture = True
+
+        piece_colour = self.board.index_position(move.start)[0]
+        new_board = make_move(self.board, move)
+        for turn in self.board.turns:
+            if turn != piece_colour and turn not in self.board.checkmated_players:
+                if piece_colour in get_checkers(new_board, turn):
+                    check = True
+
+        if capture:
+            pygame.mixer.Sound.play(self.capture_sound)
+        else:
+            pygame.mixer.Sound.play(self.move_sound)
+        if check:
+            pygame.mixer.Sound.play(self.check_sound)
+
     def update_after_move(self, move, move_table):
         self.board.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
         if move.move_type == "double push":
@@ -235,6 +259,7 @@ class RenderBoard:
                         self.board.update_castling_rights(move)
                         if not move.is_promotion:
                             move_table.add_move(self.board, move)
+                            self.play_sound(move)
                             self.board.position = make_move(self.board, move).position  # Make the move on the board
                             self.update_after_move(move, move_table)
                         else:
@@ -278,6 +303,7 @@ class RenderBoard:
                     if left_click:
                         self.promotion_move.promo_type = self.promotion_selection_list[i]
                         move_table.add_move(self.board, self.promotion_move)
+                        self.play_sound(self.promotion_move)
                         self.board.position = make_move(self.board, self.promotion_move).position  # Make the move on the board
                         self.board.position[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
                             int(self.promotion_move.end.square.x)] = self.selected_piece.colour + self.promotion_move.promo_type

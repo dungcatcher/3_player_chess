@@ -3,7 +3,7 @@
 import pygame
 import pygame.freetype
 from polygons import compute_polygons, handle_polygon_resize, draw_thick_aapolygon
-from movegen import piece_movegen, get_game_state, make_move, get_checkers
+from movegen import piece_movegen, get_game_state, make_move, get_checkers, colour_to_segment
 from shapely.geometry import Polygon, Point
 from pieces import Piece
 from classes import Position
@@ -94,18 +94,20 @@ class Board:
         return self.position[int(position.segment)][int(position.square.y)][int(position.square.x)]
 
     def update_castling_rights(self, move):
-        piece_colour = self.index_position(move.start)[0]
-
-        king_square = self.index_position(Position(move.start.segment, (4, 3)))
+        piece_colour = self.index_position(move.end)[0]
+        king_square = self.index_position(Position(colour_to_segment[piece_colour], (4, 3)))
         if king_square != f'{piece_colour}k':  # If the king is not on its start square it has moved
-            self.castling_rights[piece_colour]['queenside'] = False
-            self.castling_rights[piece_colour]['kingside'] = False
-        kingside_rook_square = self.index_position(Position(move.start.segment, (7, 3)))
+            self.castling_rights[piece_colour]["queenside"] = False
+            self.castling_rights[piece_colour]["kingside"] = False
+            print(self.castling_rights[piece_colour])
+        kingside_rook_square = self.index_position(Position(colour_to_segment[piece_colour], (7, 3)))
         if kingside_rook_square is None or kingside_rook_square != f'{piece_colour}r':
-            self.castling_rights[piece_colour]['kingside'] = False
-        queenside_rook_square = self.index_position(Position(move.start.segment, (0, 3)))
+            self.castling_rights[piece_colour]["kingside"] = False
+            print(self.castling_rights[piece_colour])
+        queenside_rook_square = self.index_position(Position(colour_to_segment[piece_colour], (0, 3)))
         if queenside_rook_square is None or queenside_rook_square != f'{piece_colour}r':
-            self.castling_rights[piece_colour]['queenside'] = False
+            self.castling_rights[piece_colour]["queenside"] = False
+            print(self.castling_rights[piece_colour])
 
     def check_winner(self):
         if len(self.checkmated_players) == 2:
@@ -148,7 +150,7 @@ class RenderBoard:
         check = False
         checkmate = False
 
-        if self.board.index_position(move.end) is not None:
+        if self.board.index_position(move.end) is not None or move.move_type == "enpassant":
             capture = True
 
         piece_colour = self.board.index_position(move.start)[0]
@@ -171,6 +173,7 @@ class RenderBoard:
             pygame.mixer.Sound.play(self.checkmate_sound)
 
     def update_after_move(self, move, move_table):
+        self.board.update_castling_rights(move)
         self.board.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares
         if move.move_type == "double push":
             self.board.enpassant_squares[self.selected_piece.colour] = \
@@ -264,7 +267,6 @@ class RenderBoard:
                     draw_thick_aapolygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=2)
 
                     if left_click:
-                        self.board.update_castling_rights(move)
                         if not move.is_promotion:
                             move_table.add_move(self.board, move)
                             self.play_sound(move)

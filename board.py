@@ -141,10 +141,13 @@ class RenderBoard:
         self.move_sound = pygame.mixer.Sound("./Assets/sfx/move.ogg")
         self.capture_sound = pygame.mixer.Sound("./Assets/sfx/capture.ogg")
         self.check_sound = pygame.mixer.Sound("./Assets/sfx/check.ogg")  # heheheha
+        self.checkmate_sound = pygame.mixer.Sound("./Assets/sfx/checkmate.ogg")
 
     def play_sound(self, move):
         capture = False
         check = False
+        checkmate = False
+
         if self.board.index_position(move.end) is not None:
             capture = True
 
@@ -152,15 +155,20 @@ class RenderBoard:
         new_board = make_move(self.board, move)
         for turn in self.board.turns:
             if turn != piece_colour and turn not in self.board.checkmated_players:
-                if piece_colour in get_checkers(new_board, turn):
+                if get_game_state(new_board, turn) == "checkmate":
+                    checkmate = True
+                elif piece_colour in get_checkers(new_board, turn):
                     check = True
 
         if capture:
             pygame.mixer.Sound.play(self.capture_sound)
         else:
             pygame.mixer.Sound.play(self.move_sound)
+
         if check:
             pygame.mixer.Sound.play(self.check_sound)
+        if checkmate:
+            pygame.mixer.Sound.play(self.checkmate_sound)
 
     def update_after_move(self, move, move_table):
         self.board.enpassant_squares[self.selected_piece.colour] = None  # Update en passant squares

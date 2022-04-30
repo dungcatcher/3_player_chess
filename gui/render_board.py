@@ -218,8 +218,6 @@ class RenderBoard:
                         move_table.add_move(self.board, self.promotion_move)
                         self.play_sound(self.promotion_move)
                         self.board.position = make_move(self.board, self.promotion_move).position  # Make the move on the board
-                        self.board.position[int(self.promotion_move.end.segment)][int(self.promotion_move.end.square.y)][
-                            int(self.promotion_move.end.square.x)] = self.selected_piece.colour + self.promotion_move.promo_type
                         self.update_after_move(self.promotion_move, move_table)
                         self.in_promotion_selector = False
                         self.playing = True

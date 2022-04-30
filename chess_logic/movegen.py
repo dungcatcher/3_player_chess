@@ -16,6 +16,8 @@ def make_move(board, move):
         new_board_position[int(move.end.segment)][3][0] = None
     elif move.move_type == "enpassant":
         new_board_position[int(move.end.segment)][int(move.end.square.y - 1)][int(move.end.square.x)] = None
+    elif move.promo_type is not None:
+        new_board_position[int(move.end.segment)][int(move.end.square.y)][int(move.end.square.x)] = piece_id[0] + move.promo_type  # Set target square to that id
 
     new_board_position[int(move.start.segment)][int(move.start.square.y)][int(move.start.square.x)] = None  # Remove starting piece id
 

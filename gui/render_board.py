@@ -159,12 +159,14 @@ class RenderBoard:
 
     def handle_mouse_events(self, mouse_position, events, move_table):
         left_click = False
+        drop = False
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 left_click = True
                 self.dragging = True
             if event.type == pygame.MOUSEBUTTONUP:
                 self.dragging = False
+                drop = True
 
         if self.selected_piece is not None and self.playing:
             if self.dragging:
@@ -190,7 +192,7 @@ class RenderBoard:
                 if point.within(move_polygon):
                     draw_thick_aapolygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=2)
 
-                    if left_click or not self.dragging:
+                    if left_click or drop:
                         if not move.is_promotion:
                             move_table.add_move(self.board, move)
                             self.play_sound(move)
@@ -259,7 +261,7 @@ class RenderBoard:
         for piece in self.pieces:
             surface.blit(piece.image, piece.rect)
 
-        surface.blit(self.move_polygon_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        surface.blit(self.move_polygon_surface, (0, 0))
         surface.blit(self.move_indicator_surface, (0, 0))
         if self.in_promotion_selector:
             surface.blit(self.promotion_selector_surface, self.outline_rect)

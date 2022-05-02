@@ -23,7 +23,8 @@ class RenderBoard:
         self.board = Board()
         self.outline_rect = pygame.Rect(0, 0, screen_size[0] * 0.7, screen_size[1])
         self.image, self.rect, self.scale = resize_board(
-            pygame.image.load('Assets/board.png'), self.outline_rect.size, self.outline_rect.center)
+            pygame.image.load('Assets/board.png').convert_alpha(), self.outline_rect.size, self.outline_rect.center)
+        self.original_image = self.image
         self.selected_piece = None
         self.polygons = compute_polygons()
         self.polygons = handle_polygon_resize(self.polygons, self.scale, self.rect.topleft)
@@ -47,6 +48,8 @@ class RenderBoard:
         self.capture_sound = pygame.mixer.Sound("Assets/sfx/capture.ogg")
         self.check_sound = pygame.mixer.Sound("Assets/sfx/check.ogg")  # heheheha
         self.checkmate_sound = pygame.mixer.Sound("Assets/sfx/checkmate.ogg")
+
+        self.dragging = False
 
     def play_sound(self, move):
         capture = False
@@ -154,8 +157,26 @@ class RenderBoard:
                             segment, (x, y)), piece_pixel_pos, piece_id[1], piece_alive))
         self.pieces = new_pieces
 
-    def handle_mouse_events(self, mouse_position, left_click, move_table):
+    def handle_mouse_events(self, mouse_position, events, move_table):
+        left_click = False
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                left_click = True
+                self.dragging = True
+            if event.type == pygame.MOUSEBUTTONUP:
+                self.dragging = False
+
         if self.selected_piece is not None and self.playing:
+            if self.dragging:
+                if self.selected_piece.rect.collidepoint(mouse_position):
+                    self.selected_piece.rect.center = mouse_position
+                    self.selected_piece.image = pygame.transform.smoothscale(self.selected_piece.original_image, (60, 60))
+                    self.selected_piece.rect = self.selected_piece.image.get_rect(center=mouse_position)
+            else:
+                self.selected_piece.rect.center = self.selected_piece.pixel_pos
+                self.selected_piece.image = pygame.transform.smoothscale(self.selected_piece.original_image, (40, 40))
+                self.selected_piece.rect = self.selected_piece.image.get_rect(center=self.selected_piece.pixel_pos)
+
             self.move_indicator_surface.fill((0, 0, 0, 0))
             self.move_polygon_surface.fill((0, 0, 0, 0))  # Fill transparent
             for move in self.selected_piece.moves:
@@ -169,7 +190,7 @@ class RenderBoard:
                 if point.within(move_polygon):
                     draw_thick_aapolygon(self.move_polygon_surface, (255, 255, 255), move_polygon_points, width=2)
 
-                    if left_click:
+                    if left_click or not self.dragging:
                         if not move.is_promotion:
                             move_table.add_move(self.board, move)
                             self.play_sound(move)
@@ -229,8 +250,8 @@ class RenderBoard:
         for piece in self.pieces:
             if piece.rect.collidepoint(mouse_position) and self.playing:
                 if not piece.highlighted and piece.colour == self.board.turn and piece != self.selected_piece:
-                    piece.image = pygame.transform.smoothscale(piece.original_image, (60, 60))
-                    piece.rect = piece.image.get_rect(center=piece.pixel_pos)
+                    # piece.image = pygame.transform.smoothscale(piece.original_image, (60, 60))
+                    # piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                     piece.highlighted = True
                 if piece.colour == self.board.turn and left_click:
                     piece.highlighted = False
@@ -240,9 +261,6 @@ class RenderBoard:
                 piece.image = pygame.transform.smoothscale(piece.original_image, (40, 40))
                 piece.rect = piece.image.get_rect(center=piece.pixel_pos)
                 piece.highlighted = False
-
-    def rotate(self, angle):
-        pass
 
     def render(self, surface):
         pygame.draw.rect(surface, (70, 70, 80), self.outline_rect)

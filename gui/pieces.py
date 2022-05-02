@@ -26,6 +26,7 @@ class Piece:
         self.colour = colour
         self.position = position  # Board position
         self.pixel_pos = pixel_pos
+        self.drag_pos = self.pixel_pos
         if alive:
             self.image = piece_image_map[colour][identifier]
         else:

@@ -31,8 +31,9 @@ class Piece:
             self.image = piece_image_map[colour][identifier]
         else:
             self.image = piece_image_map['g'][identifier]
-        self.original_image = self.image
-        self.image = pygame.transform.smoothscale(self.image, (40, 40))
+        self.normal_image = pygame.transform.smoothscale(self.image, (40, 40))
+        self.drag_image = pygame.transform.smoothscale(self.image, (60, 60))
+        self.image = self.normal_image
         self.rect = self.image.get_rect(center=pixel_pos)
         self.highlighted = False
         self.moves = []

@@ -170,11 +170,11 @@ class RenderBoard:
             if self.dragging:
                 if self.selected_piece.rect.collidepoint(mouse_position):
                     self.selected_piece.rect.center = mouse_position
-                    self.selected_piece.image = pygame.transform.smoothscale(self.selected_piece.original_image, (60, 60))
+                    self.selected_piece.image = self.selected_piece.drag_image
                     self.selected_piece.rect = self.selected_piece.image.get_rect(center=mouse_position)
             else:
                 self.selected_piece.rect.center = self.selected_piece.pixel_pos
-                self.selected_piece.image = pygame.transform.smoothscale(self.selected_piece.original_image, (40, 40))
+                self.selected_piece.image = self.selected_piece.normal_image
                 self.selected_piece.rect = self.selected_piece.image.get_rect(center=self.selected_piece.pixel_pos)
 
             self.move_indicator_surface.fill((0, 0, 0, 0))
@@ -249,18 +249,9 @@ class RenderBoard:
 
         for piece in self.pieces:
             if piece.rect.collidepoint(mouse_position) and self.playing:
-                if not piece.highlighted and piece.colour == self.board.turn and piece != self.selected_piece:
-                    # piece.image = pygame.transform.smoothscale(piece.original_image, (60, 60))
-                    # piece.rect = piece.image.get_rect(center=piece.pixel_pos)
-                    piece.highlighted = True
                 if piece.colour == self.board.turn and left_click:
-                    piece.highlighted = False
                     self.selected_piece = piece
                     self.selected_piece.moves = piece_movegen(self.board, piece.position, piece.colour)
-            else:
-                piece.image = pygame.transform.smoothscale(piece.original_image, (40, 40))
-                piece.rect = piece.image.get_rect(center=piece.pixel_pos)
-                piece.highlighted = False
 
     def render(self, surface):
         pygame.draw.rect(surface, (70, 70, 80), self.outline_rect)

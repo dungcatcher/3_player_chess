@@ -1,7 +1,3 @@
-"""TODO: Clean up handle mouse event code"""
-
-import pygame
-import pygame.freetype
 from .movegen import piece_movegen, make_move, colour_to_segment
 from .classes import Position
 

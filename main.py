@@ -29,6 +29,7 @@ def main():
         WINDOW.fill((0, 0, 0))
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
+        print(clock.get_fps())
         events = pygame.event.get()
 
         render_board.handle_mouse_events((mouse_x, mouse_y), events, move_table)

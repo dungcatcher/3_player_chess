@@ -4,7 +4,7 @@ My implementation of three-man chess with some alterations https://en.wikipedia.
 <img width="745" alt="readme image" src="https://user-images.githubusercontent.com/76923259/164628702-b412dc8f-b808-4a8f-b2cd-97ec67fe74ed.png">
 
 ## Rules:
-- The turns go in anti-clockwise order (i.e white, black, red)
+- The turns go in clockwise order (i.e white, red, black)
 - A player wins when both of his opponents have been checkmated.
 - When an opponent is checkmated, their pieces turn grey but stay on the board, and their turn is skipped.
 - When there are still three players left, a stalemate still counts as a checkmate. If there are two players, then the game is a draw between the two remaining players.
@@ -15,5 +15,5 @@ My implementation of three-man chess with some alterations https://en.wikipedia.
 - Click on the green 'Code' button and click download as zip.
 - Save and extract the zip to any location on your computer.
 - Open command prompt and move to the directory you extracted the folder to using ```cd {directory}```
-- Make sure you have python 3 and pip installed and type ```pip install shapely``` to install the required package.
+- Make sure you have python 3 and pip installed and type ```pip install pygame``` and ```pip install shapely``` to install the required packages.
 - Now you can run the file using ```python3 main.py```
